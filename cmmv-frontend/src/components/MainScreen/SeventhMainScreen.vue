@@ -35,21 +35,18 @@
             appear
             enter-active-class="animated fadeIn"
             leave-active-class="animated fadeOut">
-        <seventh-screen-instruction/>
+        <seventhScreenInstruction/>
         </transition>
 
   </transition-group>
 </template>
 
-<script>
-export default {
-    components: {
-        'seventh-screen-instruction': require('components/UserInstructions/SeventhMainScreenInstruction.vue').default,
-        'page-content': require('components/MainScreen/Content.vue').default
-    },
-    methods: {}
-}
+
+<script setup>
+import seventhScreenInstruction from 'components/UserInstructions/SeventhMainScreenInstruction.vue'
+import pageContent from 'components/MainScreen/Content.vue'
 </script>
+
 
 <style>
 

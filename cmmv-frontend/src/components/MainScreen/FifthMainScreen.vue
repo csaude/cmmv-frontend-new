@@ -16,7 +16,7 @@
                             src="~src/assets/05OndeFazer.png"
                             style="height: auto; max-width: 100%"
                             >
-                        <page-content
+                        <pageContent
                             title="Onde fazer a circuncisão"
                             content="A circuncisão é feita na unidade sanitária que oferece os serviços de circuncisão."
                             content1="É seguro fazer a circuncisão na unidade sanitária porque o procedimento é feito por profissionais de saúde qualificados e usa-se anestesia para evitar a dor e leva medicamento para tomar quando a anestesia passar para que não sinta dor.."
@@ -25,19 +25,15 @@
                 </div>
             </q-item>
         </q-slide-item>
-        <navigation-buttons
+        <navigationButtons
                 @nextScreen="$emit('nextScreen')"
                 @previousScreen="$emit('previousScreen')" />
     </transition-group>
 </template>
 
-<script>
-export default {
-    components: {
-        'navigation-buttons': require('components/MainScreen/NavigationButtons.vue').default,
-        'page-content': require('components/MainScreen/Content.vue').default
-    }
-}
+<script setup>
+import navigationButtons from 'components/MainScreen/NavigationButtons.vue'
+import pageContent from 'components/MainScreen/Content.vue'
 </script>
 
 <style>
