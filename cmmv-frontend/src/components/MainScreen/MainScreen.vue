@@ -24,32 +24,26 @@
         enter-active-class="animated fadeIn"
         leave-active-class="animated fadeOut"
     >
-     <main-screen-instruction/>
+     <mainScreenInstruction/>
     </transition>
 </transition-group>
 </template>
-<script>
-    import { ref } from 'vue'
-        export default {
-              setup () {
-                return {
-                    fab: ref(false),
-                    slide: ref(1),
-                    autoplay: ref(true)
-                }
-            },
-            components: {
-                'main-screen-instruction': require('components/UserInstructions/MainScreenInstruction.vue').default
-             },
-            computed: {
-                computedTitleClass () {
-                    return this.$q.platform.is.desktop ? 'text-h1-xl' : 'text-h5'
-                },
-                computedSubTitleClass () {
-                    return this.$q.platform.is.desktop ? 'text-h2-xl' : 'text-h5'
-                }
-            },
-            methods: {
-            }
-        }
+<script setup>
+import { ref } from 'vue'
+import mainScreenInstruction from 'components/UserInstructions/MainScreenInstruction.vue'
+// import { Platform } from 'quasar';
+
+const fab = ref(false);
+/*
+const slide = ref(1);
+const autoplay = ref(true);
+
+const computedTitleClass = computed(() => {
+  return Platform.is.desktop ? 'text-h1-xl' : 'text-h5'
+});
+
+const computedSubTitleClass = computed(() => {
+  return Platform.is.desktop ? 'text-h1-xl' : 'text-h5'
+});
+*/
 </script>

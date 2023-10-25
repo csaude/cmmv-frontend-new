@@ -34,18 +34,15 @@
                     </div>
             </q-item>
         </q-slide-item>
-        <navigation-buttons
+        <navigationButtons
             @nextScreen="$emit('nextScreen')"
             @previousScreen="$emit('previousScreen')" />
     </transition-group>
 </template>
 
-<script>
-export default {
-    components: {
-        'navigation-buttons': require('components/MainScreen/NavigationButtons.vue').default
-    }
-}
+<script setup>
+import navigationButtons from 'components/MainScreen/NavigationButtons.vue'
+
 </script>
 
 <style>

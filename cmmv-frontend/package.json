@@ -28,7 +28,10 @@
     "vue3-apexcharts": "^1.4.1",
     "localbase": "^0.7.5",
     "nano-sql": "^1.8.5",
-    "cordova-plugin-nano-sqlite": "^1.7.0"
+    "cordova-plugin-nano-sqlite": "^1.7.0",
+    "bcryptjs": "^2.4.3",
+    "is-online": "^9.0.1",
+    "vue-cryptojs": "^2.4.3"
   },
   "devDependencies": {
     "@intlify/vite-plugin-vue-i18n": "^3.3.1",

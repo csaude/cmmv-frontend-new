@@ -14,14 +14,14 @@
                 <div key="secondScreen" class="q-gutter-md row items-start">
                     <img src="~src/assets/02Definicao.png"
                         style="height: auto; max-width: 100%"/>
-                    <page-content
+                    <pageContent
                         title="O que é a circuncisão"
                         content="Circuncisão masculina médica é uma pequena cirurgia que consiste na retirada da pele que cobre a cabeça do pénis (prepúcio)."
                         />
                 </div>
             </q-item>
         </q-slide-item>
-         <navigation-buttons
+         <navigationButtons
                             @nextScreen="$emit('nextScreen')"
                             @previousScreen="$emit('previousScreen')" />
         <transition
@@ -29,19 +29,16 @@
             enter-active-class="animated fadeIn"
             leave-active-class="animated fadeOut"
         >
-        <second-screen-instruction/>
+        <secondScreenInstruction/>
     </transition>
     </transition-group>
 </template>
 
-<script>
-export default {
-    components: {
-        'second-screen-instruction': require('components/UserInstructions/SecondMainScreenInstruction.vue').default,
-        'navigation-buttons': require('components/MainScreen/NavigationButtons.vue').default,
-        'page-content': require('components/MainScreen/Content.vue').default
-    }
-}
+<script setup>
+import secondScreenInstruction from 'components/UserInstructions/SecondMainScreenInstruction.vue'
+import navigationButtons from 'components/MainScreen/NavigationButtons.vue'
+import pageContent from 'components/MainScreen/Content.vue'
+
 </script>
 
 <style>

@@ -7,15 +7,10 @@
     </div>
 </template>
 
-<script>
-export default {
-    data () {
-        return {
-            img: '~src/assets/splash_img.png'
-        }
-    },
-    props: ['imgUrl']
-}
+<script setup>
+import { ref } from 'vue';
+
+const img = ref('~src/assets/splash_img.png');
 </script>
 
 <style>
