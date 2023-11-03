@@ -41,31 +41,27 @@
     </q-card>
     </transition-group>
 </template>
-
-<script>
+<script setup>
 import { date } from 'quasar'
-    export default {
-        props: ['appointment'],
-        data () {
-            return {
-                confirmed: false
-            }
-        },
-        computed: {
-            appointementConfirmed () {
-                return this.appointment.status === 'ACEITE'
-            }
-        },
-    methods: {
-        formatDate (value) {
-            return date.formatDate(value, 'D-MM-YYYY')
-        },
-        remarcar () {
-            this.$emit('rescheduleAppointment', this.appointment)
-        }
-    }
-    }
+import { ref,computed , inject } from 'vue'
+
+const confirmed = ref(false);
+const appointment = inject('appointment');
+
+const appointementConfirmed =  computed(() => {
+  return appointment.value.status === 'ACEITE'
+});
+
+
+const formatDate = (value) => {
+date.formatDate(value, 'DD-MM-YYYY')
+}
+
+const remarcar = (value) => {
+  emit('rescheduleAppointment', appointment.value)
+}
 </script>
+
 
 <style>
 

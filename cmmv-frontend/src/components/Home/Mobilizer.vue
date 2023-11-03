@@ -23,10 +23,12 @@
 </transition-group>
 </template>
 
-<script>
-export default {
-    props: ['mobilizer']
-}
+<script setup>
+
+import { inject } from 'vue'
+
+const mobilizer = inject('mobilizer')
+
 </script>
 
 <style>

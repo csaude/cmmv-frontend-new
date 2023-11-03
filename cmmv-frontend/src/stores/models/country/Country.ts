@@ -1,6 +1,6 @@
 import { Model } from 'pinia-orm'
-import Province from 'src/store/models/province/Province'
-import db from 'src/store/localbase'
+import Province from '../province/Province'
+// import db from 'src/store/localbase'
 
 export default class Country extends Model {
   static entity = 'countries'
@@ -17,6 +17,7 @@ export default class Country extends Model {
     }
   }
 
+  /*
   static localDbAdd (country) {
     return db.newDb().collection('countries').add(country)
   }
@@ -44,4 +45,5 @@ export default class Country extends Model {
   static localDbDeleteAll () {
     return db.newDb().collection('countries').delete()
   }
+  */
 }

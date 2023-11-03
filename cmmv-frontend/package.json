@@ -14,11 +14,15 @@
   },
   "dependencies": {
     "axios": "^1.2.1",
+    "@sideway/address": "^5.0.0",
+    "@sideway/formula": "^3.0.1",
+    "@vueuse/components": "^10.1.2",
+    "@vueuse/core": "^10.1.2",
     "vue-i18n": "^9.2.2",
     "pinia": "^2.0.11",
     "pinia-orm": "^1.6.7",
     "pinia-plugin-persistedstate": "^3.1.0",
-    "@quasar/extras": "^1.16.4",
+    "@quasar/extras": "^1.0.0",
     "quasar": "^2.6.0",
     "vue": "^3.0.0",
     "vue-router": "^4.0.0",
@@ -30,7 +34,7 @@
     "nano-sql": "^1.8.5",
     "cordova-plugin-nano-sqlite": "^1.7.0",
     "bcryptjs": "^2.4.3",
-    "is-online": "^9.0.1",
+    "is-online": "^10.0.0",
     "vue-cryptojs": "^2.4.3"
   },
   "devDependencies": {

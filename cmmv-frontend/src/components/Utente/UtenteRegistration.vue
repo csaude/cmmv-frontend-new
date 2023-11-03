@@ -1,4 +1,5 @@
 <template>
+  <q-page-container>
   <q-page >
     <div class="row items-center q-mb-md bg-deep-orange-3">
         <div class="col q-my-sm">
@@ -18,22 +19,28 @@
         <div class="q-px-sm">
             <div class="row q-my-lg">Dados Pessoais</div>
             <div class="row">
-                <input-text-field
-                    class="col"
-                    ref="nome"
-                    v-model="utente.firstNames"
-                    :rules="[ val => val.length >= 3 || 'O nome indicado é inválido']"
-                    lazy-rules
-                    label="Nome" />
+              <q-input
+              label="Nome *"
+              dense
+                rounded
+               outlined
+              class="col"
+              ref="nomeRef"
+              :rules="[(val) => !!val || 'Por favor indicar o nome']"
+              v-model="utente.firstNames"
+            />
             </div>
             <div class="row">
-                <input-text-field
-                    class="col"
-                    ref="apelido"
-                    v-model="utente.lastNames"
-                    :rules="[ val => val.length >= 2 || 'O apelido indicado é inválido']"
-                    lazy-rules
-                    label="Apelido" />
+              <q-input
+              label="Apelido *"
+               dense
+                rounded
+               outlined
+              class="col"
+              ref="apelidoRef"
+               :rules="[ val => val.length >= 2 || 'O apelido indicado é inválido']"
+              v-model="utente.lastNames"
+            />
             </div>
             <div class="row">
               <input-phone-code
@@ -42,10 +49,14 @@
                   outlined
                     class="col-2">
             </input-phone-code>
-                <input-number-phone-field
+                <q-input
                     class="col"
-                    ref="phone"
                     mask="#########"
+                    ref="phoneRef"
+                    dense
+                   rounded
+                   outlined
+                    type="tel"
                     :rules="[ val => phoneRules (val)]"
                     v-model="utente.cellNumber"
                       lazy-rules
@@ -58,10 +69,14 @@
                   outlined
                     class="col-2">
             </input-phone-code>
-                <input-number-phone-field
+                <q-input
                     class="col"
-                    ref="whatsapp"
+                    ref="whatsappRef"
                     mask="#########"
+                    dense
+                   rounded
+                   outlined
+                    type="tel"
                       :rules="[ val => whatsapNumberRules(val)]"
                     v-model="utente.whatsappNumber"
                     label="Número de Telemovel com Whatsapp" />
@@ -77,18 +92,18 @@
                     <q-input
                         dense
                         rounded outlined
-                        v-model="utente.birthDate"
-                        ref="birthDate"
+                        v-model="dateOfBirth"
+                        ref="birthDateRef"
                         label="Data de Nascimento"
-                        @update:model-value="idadeCalculator(utente.birthDate)">
+                        @update:model-value="ageCalculator()">
                         <template v-slot:append>
                             <q-icon name="event" class="cursor-pointer">
                             <q-popup-proxy ref="qDateProxy" transition-show="scale" transition-hide="scale">
                                  <q-date
                                     mask="DD-MM-YYYY"
-                                    v-model="utente.birthDate"
+                                    v-model="dateOfBirth"
                                     :options="blockDataFutura"
-                                    @update:model-value="idadeCalculator(utente.birthDate)"
+                                    @update:model-value="ageCalculator()"
                                 >
                                     <div class="row items-center justify-end">
                                       <q-btn v-close-popup label="Fechar" color="primary" flat />
@@ -106,29 +121,32 @@
                         dense
                         label="Idade"
                         type="number"
-                        ref="age"
+                        ref="ageRef"
                         rounded outlined
-                        v-model="utente.age"
+                        v-model="ageCalculated"
                         :rules="[val => (val > 14 && val < 100) || 'Digite uma idade real e maior que 14 anos de idade']"
                         lazy-rules>
                         <template v-slot:append>
                             <q-icon
                             name="autorenew"
                             class="cursor-pointer"
-                            @click="birthDateCalculator (utente.age)"/>
+                            @update:model-value="dateOfBirthCalculator()"/>
                         </template>
                     </q-input>
                 </div>
             </div>
             <div class="row q-my-lg">Endereço</div>
             <div class="row q-mb-md">
-                <combo-field
+                <q-select
                     class="col"
-                    v-model="address.province"
+                    dense
+                    outlined
+                    rounded
+                    v-model="selectedProvince"
                     :options="provinces"
                     transition-show="flip-up"
                     transition-hide="flip-down"
-                    ref="province"
+                    ref="provinceRef"
                     option-value="id"
                     option-label="description"
                     :rules="[ val => ( val != null ) || ' Por favor indique a província']"
@@ -136,13 +154,16 @@
                     label="Província" />
             </div>
             <div class="row q-mb-md">
-                <combo-field
+                <q-select
                     class="col"
+                    dense
+                    outlined
+                    rounded
                      transition-show="flip-up"
                     transition-hide="flip-down"
                     v-model="address.district"
                     :options="districts"
-                    ref="district"
+                    ref="districtRef"
                     option-value="id"
                     option-label="description"
                     :rules="[ val => ( val != null) || ' Por favor indique a Distrito/Cidade']"
@@ -155,7 +176,7 @@
                     rounded
                     dense
                     class="col"
-                    ref="bairro"
+                    ref="bairroRef"
                     v-model="address.neighboorhood"
                     label="Bairro" />
             </div>
@@ -167,7 +188,7 @@
                     lazy-rules
                     outlined
                     dense
-                    ref="morada"
+                    ref="moradaRef"
                     type="textarea"
                     label="Residência"
                     />
@@ -176,8 +197,8 @@
             <q-separator/>
             <div class="row q-mb-md">
                 <q-btn push flat color="white" text-color="black" round icon="my_location" @click="locateMe"/>
-                <q-input readonly v-model="address.latitude" label="Latitude" ref="latitude" />
-                <q-input readonly v-model="address.longitude" label="Longitude" ref="longitude" />
+                <q-input readonly v-model="address.latitude" label="Latitude" ref="latitudeRef" />
+                <q-input readonly v-model="address.longitude" label="Longitude" ref="longitudeRef" />
             </div>
         </div>
           <div class="absolute-bottom">
@@ -187,316 +208,288 @@
         </div>
     </form>
   </q-page>
+</q-page-container>
 </template>
-
-<script>
- import Utente from 'src/store/models/utente/Utente'
+<script setup>
+ import Utente from 'src/stores/models/utente/Utente'
 // import Address from 'src/store/models/address/Address'
-import Province from 'src/store/models/province/Province'
-import District from 'src/store/models/district/District'
-import { useQuasar, QSpinnerIos, date } from 'quasar'
-import { ref } from 'vue'
+import { date } from 'quasar'
+import { ref,onMounted, computed,inject } from 'vue'
 import moment from 'moment'
 import { v4 as uuidv4 } from 'uuid'
-import Localbase from 'localbase'
-import Address from '../../store/models/address/Address'
- const db = new Localbase('db')
-export default {
-    setup () {
-        return {
-        }
-    },
-  data () {
-    const $q = useQuasar()
-    return {
-        ageText: '',
-        hoje: String(this.formatDateDDMMYYYY(new Date())),
-        birthMinDate: new Date(),
-        utente: {
-            firstNames: '',
-            lastNames: '',
-            birthDate: '',
-            cellNumber: '',
-            whatsappNumber: '',
-            preferedLanguage: '',
-            documentType: '',
-            documentNumber: '',
-            systemNumber: '',
-            haspartner: '',
-            age: '',
-            status: 'PENDENTE',
-            registerDate: '',
-            addresses: [],
-            communityMobilizer: {}
-        },
-        currUtente: {},
-        selectedProvince: '',
-        editedIndex: '',
-        address: {
-            city: '',
-            residence: ' ',
-            neighboorhood: '',
-            latitude: '',
-            longitude: '',
-            district: null,
-            province: null
-        },
-        $q,
-        location: null,
-        gettingLocation: false,
-        errorStr: null,
-        myLocation: {
-            latitude: '',
+// import Localbase from 'localbase'
+import Address from '../../stores/models/address/Address'
+import utenteService from '../../services/api/utente/UtenteService'
+import provinceService from '../../services/api/province/provinceService'
+import districtService from '../../services/api/district/districtService'
+import inputPhoneCode from 'components/Shared/IconPhoneCode.vue';
+import { useLoading } from 'src/composables/shared/loading/loading';
+import { useSwal } from 'src/composables/shared/dialog/dialog';
+// import db from 'src/store/localbase'
+
+const { closeLoading, showloading } = useLoading();
+const { alertSucess, alertError, alertInfo, alertWarningAction } = useSwal();
+//const hoje = ref(String(formatDateDDMMYYYY(new Date())))
+const birthMinDate = ref(new Date())
+const utente = ref(new Utente())
+const ageText = ref('')
+const currUtente = ref({})
+const selectedProvince = ref(null)
+const editedIndex = ref('')
+const address = ref(new Address())
+
+const location = ref(null)
+const gettingLocation = ref(false)
+const errorStr = ref(null)
+const myLocation = ({
+          latitude: '',
             longitude: '',
             distance: ''
-        }
-      //  db
-    }
-  },
-    props: ['indexEdit', 'utenteUpdate', 'mobilizer', 'showUtenteRegistrationScreenProp', 'numbers'],
-    emits: ['update:showUtenteRegistrationScreenProp'],
-    components: {
-        'combo-field': require('components/Shared/ComboField.vue').default,
-        'input-text-field': require('components/Shared/InputFieldText.vue').default,
-        'input-number-phone-field': require('components/Shared/InputFieldPhoneNumber.vue').default,
-        'input-phone-code': require('components/Shared/IconPhoneCode.vue').default
-        // 'input-number-field': require('components/Shared/InputNumberField.vue').default
-        // buttone: require('components/Shared/Button.vue').default,
-        // pageHeader: require('components/Utente/UtenteRegistrationHeader.vue').default
-    },
-    created () {
-        this.currUtente = Object.assign({}, this.utente)
-        console.log(this.utenteUpdate)
-        if (this.indexEdit === 0) {
-            this.utente = Object.assign({}, this.utenteUpdate)
-            this.utente.birthDate = moment(this.utenteUpdate.birthDate).format('DD-MM-YYYY')
-            this.idadeCalculator(this.utente.birthDate) // Calculo da idade do utente
-           if (this.utente.haspartner === true) {
-             this.utente.haspartner = ref('true')
+})
+const dateOfBirth = ref('');
+const ageCalculated = ref('');
+const indexEdit = inject('indexEdit')
+const utenteToEdit = inject('utenteToEdit')
+
+const date1 = ref(moment(date).format('YYYY/MM/DD'))
+
+const nomeRef = ref(null);
+const apelidoRef = ref(null);
+const phoneRef = ref(null);
+const birthDateRef = ref(null);
+const whatsappRef = ref(null);
+const provinceRef = ref(null);
+const districtRef = ref(null);
+const moradaRef = ref(null);
+const bairroRef = ref(null);
+const ageRef = ref(null);
+
+ const showUtenteRegistrationScreen = inject('showUtenteRegistrationScreen')
+ const mobilizer = inject('mobilizer')
+
+
+ onMounted(() => {
+  currUtente.value = Object.assign({}, utente.value)
+      //  console.log(utenteToEdit.value)
+        if (indexEdit.value === 0) {
+            utente.value = Object.assign({}, utenteToEdit.value)
+            utente.value.birthDate = moment(utenteToEdit.value.birthDate).format('DD-MM-YYYY')
+            dateOfBirth.value = moment(utenteToEdit.value.birthDate).format(
+      'DD-MM-YYYY'
+    );
+    ageCalculated.value = moment().diff(
+      moment(getDateFromHyphenDDMMYYYY(dateOfBirth.value), 'YYYY-MM-DD'),
+      'years'
+    );
+         //  idadeCalculator(utente.value.birthDate) // Calculo da idade do utente
+           if (utente.value.haspartner === true) {
+             utente.value.haspartner = ref('true')
            } else {
-               this.utente.haspartner = ref('false')
+               utente.value.haspartner = ref('false')
            }
-            if (this.utente.addresses.length > 0) {
-                this.address = this.utente.addresses[0]
-                this.address.district = District.query().with('province').find(this.address.district_id)
-                this.address.province = this.address.district.province
-                this.address.province_id = this.address.district.province.id
+            if (utente.value.addresses.length > 0) {
+                address.value = utente.value.addresses[0]
+                address.value.district = districtService.getById(address.value.district_id)
+               selectedProvince.value = address.value.district.province
+            //    address.value.province_id = address.value.district.province.id
             }
-        } else {
-           this.utente = {
-                firstNames: '',
-                lastNames: '',
-                birthDate: '',
-                cellNumber: '',
-                whatsappNumber: '',
-                preferedLanguage: '',
-                documentType: '',
-                documentNumber: '',
-                systemNumber: '',
-                haspartner: '',
-                age: '',
-                status: 'PENDENTE',
-                addresses: [],
-                communityMobilizer: {}
-           }
-        }
-    },
-    mounted () {
-        console.log()
-        if (this.address.latitude === null & this.address.longitude === null) {
-            this.locateMe()
-        }
-    },
-    computed: {
-         provinces () {
-           return Province.query().orderBy('code').has('code').get()
-        },
-        districts () {
-        if (this.address.province !== null) {
-            return District.query().has('code').withAll().where('province_id', this.address.province.id).get()
-        } else {
-            return null
-        }
-        }
-    },
-    watch: {
-    },
-    methods: {
-        moment,
-        idadeCalculator (birthDate) {
-            if (moment(birthDate, 'DD/MM/YYYY').isValid()) {
-               const utentBirthDate = moment(birthDate, 'DD/MM/YYYY')
-               const todayDate = moment(new Date())
-               const idade = todayDate.diff(utentBirthDate, 'years')
-               console.log(idade)
-               this.utente.age = idade
-            }
-        },
-        birthDateCalculator (age) {
-            const today = moment(new Date())
-            const birthDate = moment(today).subtract(age, 'years')
-            this.utente.birthDate = moment(birthDate).format('DD-MM-YYYY')
-        },
-        formatDateDDMMYYYY (value) {
-            return date.formatDate(value, 'DD-MM-YYYY')
-        },
-        date: ref(moment(date).format('YYYY/MM/DD')),
-        blockDataFutura (date) {
-            return date <= moment(new Date()).format('YYYY/MM/DD')
-        },
-        closeRegistration (close) {
-        this.$q.loading.show({
-            spinner: QSpinnerIos,
-            message: 'Por favor, aguarde...'
-         })
+        } 
+  if (address.value.latitude === null & address.value.longitude === null) {
+            locateMe()
+  }
+});
+
+const provinces =  computed(() => {
+  return provinceService.getAllProvinces();
+});
+
+
+const districts =  computed(() => {
+    if (selectedProvince.value !== null) {
+  return districtService.getAllByProvinceId(selectedProvince.value.id);
+    } else {
+        return null
+    }
+});
+
+
+const dateOfBirthCalculator = () => {
+  if (
+    ageCalculated.value !== null &&
+    ageCalculated.value !== undefined &&
+    ageCalculated.value !== ''
+  ) {
+    dateOfBirth.value = moment(
+      '01-01-' + (moment().year() - ageCalculated.value)
+    ).format('DD-MM-YYYY');
+  } else {
+    dateOfBirth.value = '';
+  }
+};
+
+const ageCalculator = () => {
+  if (
+    dateOfBirth.value !== null &&
+    dateOfBirth.value !== undefined &&
+    dateOfBirth.value !== ''
+  ) {
+    ageCalculated.value = moment().diff(
+      moment(getDateFromHyphenDDMMYYYY(dateOfBirth.value), 'YYYY-MM-DD'),
+      'years'
+    );
+  } else {
+    ageCalculated.value = '';
+  }
+};
+const formatDateDDMMYYYY = (value) => {
+   return date.formatDate(value, 'DD-MM-YYYY')
+}
+
+const blockDataFutura = (date) => {
+    return date <= moment(new Date()).format('YYYY/MM/DD')
+}
+
+const closeRegistration = (close) => {
+  showloading()
             setTimeout(() => {
-                this.$q.loading.hide()
-                this.$emit('update:showUtenteRegistrationScreenProp', close)
+             closeLoading()
+               // $emit('update:showUtenteRegistrationScreenProp', close)
+               showUtenteRegistrationScreen.value=false
             }, 100)
-        },
-        closeRegistrationVerification () {
-            if ((this.address.province !== null && this.address.province !== undefined && this.address.province !== '') ||
-                (this.address.residence !== null && this.address.residence !== undefined && this.address.residence.trim().length > 0) ||
-                (this.utente.firstNames.length > 0) || (this.utente.lastNames.length > 0)) {
-                    this.verificationDialog()
+}
+
+const closeRegistrationVerification = () => {
+ if ((address.value.province !== null && address.value.province !== undefined && address.value.province !== '') ||
+                (address.value.residence !== null && address.value.residence !== undefined && address.value.residence.trim().length > 0) ||
+                (utente.value.firstNames.length > 0) || (utente.value.lastNames.length > 0)) {
+                    verificationDialog()
                 } else {
-                    this.$q.loading.show({
-                    spinner: QSpinnerIos,
-                    message: 'Por favor, aguarde...'
-                    })
+                  showloading()
                     setTimeout(() => {
-                        this.$q.loading.hide()
-                        this.$emit('update:showUtenteRegistrationScreenProp', false)
+                    closeLoading()
+                    showUtenteRegistrationScreen.value=false
                     }, 100)
             }
-        },
-        verificationDialog () {
-            this.$q.dialog({
-                title: 'Confirmação',
-                message: 'Pretende voltar ao ecrã anterior?',
-                ok: {
-                label: 'OK',
-                push: true,
-                color: 'blue'
-                },
-                cancel: {
-                label: 'Cancelar',
-                push: true,
-                color: 'negative'
-                },
-                persistent: true
-            }).onOk(() => {
-                 this.utente = {}
-                 this.$emit('update:showUtenteRegistrationScreenProp', false)
-            }).onCancel(() => {
-                // console.log('>>>> Cancel')
-            }).onDismiss(() => {
-                // console.log('I am triggered on both OK and Cancel')
-            })
-        },
+}
 
-        validateUtente () {
-            this.$refs.nome.$refs.ref.validate()
-            this.$refs.apelido.$refs.ref.validate()
-            this.$refs.phone.$refs.ref.validate()
-            this.$refs.age.validate()
-            this.$refs.province.$refs.ref.validate()
-            this.$refs.district.$refs.ref.validate()
-            this.$refs.morada.validate()
-            if (!this.$refs.nome.$refs.ref.hasError && !this.$refs.apelido.$refs.ref.hasError &&
-                !this.$refs.phone.$refs.ref.hasError && !this.$refs.age.hasError &&
-                !this.$refs.province.hasError && !this.$refs.district.hasError && !this.$refs.morada.hasError) {
-                this.saveOrUpdateUtente()
-            } else {
-                this.$q.loading.hide()
+const verificationDialog = () => {
+ alertWarningAction(
+    'Pretende voltar ao ecrã anterior?'
+  ).then((result) => {
+    if (result) {
+     utente.value = {}
+   //  emit('update:showUtenteRegistrationScreenProp', false)
+   showUtenteRegistrationScreen.value = false
+    }
+  });
+}
+
+const validateUtente = () => {
+
+  nomeRef.value.validate();
+  apelidoRef.value.validate();
+  phoneRef.value.validate();
+  birthDateRef.value.validate();
+  whatsappRef.value.validate();
+  provinceRef.value.validate();
+  moradaRef.value.validate();
+  bairroRef.value.validate();
+  ageRef.value.validate();
+
+  if (
+    !nomeRef.value.hasError &&
+    !apelidoRef.value.hasError &&
+    !provinceRef.value.hasError &&
+    !phoneRef.value.hasError &&
+    !districtRef.value.hasError &&
+    !whatsappRef.value.hasError &&
+    !moradaRef.value.hasError &&
+    !bairroRef.value.hasError &&
+    !ageRef.value.hasError
+  ) {
+    saveOrUpdateUtente()
+  }
+}
+
+const getYYYYMMDDFromJSDate = (jsDate ) => {
+    return moment(jsDate).local().format('YYYY-MM-DD');
+  }
+
+const getDateFromHyphenDDMMYYYY = (jsDate) => {
+    return date.extractDate(jsDate, 'DD-MM-YYYY');
+}
+
+const saveOrUpdateUtente = () => {
+  /*
+  const dateObject = getYYYYMMDDFromJSDate(
+      getDateFromHyphenDDMMYYYY(dateOfBirth.value)
+    );
+*/
+console.log(dateOfBirth.value)
+  utente.value.birthDate = getYYYYMMDDFromJSDate(
+    getDateFromHyphenDDMMYYYY(dateOfBirth.value)
+  );
+  utente.value.registerDate = new Date()
+  console.log(utente.value.birthDate)
+
+  utente.value.communityMobilizer = mobilizer.value
+  utente.value.communityMobilizer_id = mobilizer.value.id
+
+  if (utente.value.syncStatus === 'S' || utente.value.syncStatus === 'U') {
+    utente.value.syncStatus = 'U'
+     } else {
+     utente.value.syncStatus = 'P'
+      }
+
+  utente.value.status = 'ASSOCIADO'
+  utente.value.addresses.splice(0, 1, address.value)
+
+          
+            
+        // utenteService.post(utente.value)
+        if (indexEdit.value === 1) {
+          utente.value.id = uuidv4()
+        } 
+       
+        const utenteLocalBase = JSON.parse(JSON.stringify(utente.value))
+     
+        console.log(utenteLocalBase)
+        utenteService.putMobile(utenteLocalBase)
+       
+            closeRegistration(false)
             }
-        },
-        saveOrUpdateUtente () {
-            this.address.city = this.address.district.description
-            this.address.province_id = this.address.province.id
-            this.address.district_id = this.address.district.id
-            console.log(this.address.latitude)
-            console.log(this.address.longitude)
-            this.utente.addresses.splice(0, 1, this.address)
-            this.utente.birthDate = moment(this.utente.birthDate, 'DD-MM-YYYY').format('YYYY-MM-DD')
-            this.utente.communityMobilizer = this.mobilizer
-            this.utente.communityMobilizer_id = this.mobilizer.id
-             this.utente.selected = ''
-             this.utente.clinic_id = ''
-             this.utente.clinic = null
-             if (this.utente.syncStatus === 'S' || this.utente.syncStatus === 'U') {
-                  this.utente.syncStatus = 'U'
-             } else {
-                  this.utente.syncStatus = 'P'
-             }
-            if (this.utente.communityMobilizer !== null) {
-                this.utente.status = 'ASSOCIADO'
-            }
-            if (this.utente.haspartner === 'true') {
-                this.utente.haspartner = true
-            } else {
-                this.utente.haspartner = false
-            }
-            if (this.indexEdit === 1) {
-            this.utente.addresses[0].id = uuidv4()
-                this.utente.id = uuidv4()
-                this.utente.registerDate = new Date()
-                const utenteLocalBase = JSON.parse(JSON.stringify(this.utente))
-                db.collection('utentes').add(utenteLocalBase)
-                this.closeRegistration(false)
-                Utente.insert({
-                    data: utenteLocalBase
-                })
-            } else {
-               if (this.utente.syncStatus === 'S') {
-                   this.utente.syncStatus = 'U'
-            }
-            const utenteLocalBase = JSON.parse(JSON.stringify(this.utente))
-            db.collection('utentes').doc({ id: this.utente.id }).set(utenteLocalBase)
-            Utente.update({
-                data: utenteLocalBase
-            })
-            Address.update({
-                data: utenteLocalBase.addresses[0]
-            })
-            this.$q.notify({
-                message: 'O utente ' + this.utente.firstNames + ' ' + this.utente.lastNames + ' foi actualizado com sucesso.',
-                color: 'teal'
-            })
-            this.closeRegistration(false)
-        }
-    },
-     phoneRules (val) {
+
+
+const phoneRules = (val) => {
        if (val.length === 0 || val.length < 9) {
       return 'O Número é invalido. Deve conter 9 dígitos.'
-       } else if (this.validatePhonePrefix(parseInt(val.substring(0, 2)))) {
+       } else if (validatePhonePrefix(parseInt(val.substring(0, 2)))) {
            return 'O Número é invalido. O codigo da operadora não existe'
        }
-    },
-    whatsapNumberRules (val) {
-       if (val.length !== 0 && val.length < 9) {
+}
+
+const whatsapNumberRules = (val) => {
+        if (val.length !== 0 && val.length < 9) {
       return 'O Número é invalido. Deve conter 9 dígitos.'
-      } else if (val.length !== 0 && this.validatePhonePrefix(parseInt(val.substring(0, 2)))) {
+      } else if (val.length !== 0 && validatePhonePrefix(parseInt(val.substring(0, 2)))) {
            return 'O Número é invalido. O codigo da operadora não existe'
       }
-    },
-    validatePhonePrefix (val) {
-         if ((val !== 82) && (val !== 83) && (val !== 84) && (val !== 85) && (val !== 86) && (val !== 87)) {
+}
+
+const validatePhonePrefix = (val) => {
+       if ((val !== 82) && (val !== 83) && (val !== 84) && (val !== 85) && (val !== 86) && (val !== 87)) {
              return true
          }
-    },
-    editaUtente (utente) {
-      this.editedIndex = 0
-      this.utente = Object.assign({}, utente)
+}
+
+const editaUtente = (val) => {
+     editedIndex.value = 0
+      utente.value = Object.assign({}, utente.value)
       console.log(utente)
-    //   this.address.city = this.address.district.description
-    //   this.utente.addresses.push(this.address)
-    //   this.utente.birthDate = new Date(this.utente.birthDate)
-    //   this.utente.communityMobilizer = this.mobilizer
-    //   this.utente.communityMobilizer_id = this.mobilizer.id
-    },
-    async getLocation () {
-          return new Promise((resolve, reject) => {
+}
+
+const getLocation = async (val) => {
+       return new Promise((resolve, reject) => {
             if (!('geolocation' in navigator)) {
               reject(new Error('Localização Geográfica não está disponível. Por favor, ligue a Localização Geográfica no seu dispositivo.'))
         }
@@ -506,33 +499,33 @@ export default {
           reject(err)
         })
       })
-    },
-    async locateMe () {
-        this.$q.loading.show({
-          spinner: QSpinnerIos,
-          message: 'Carregando a sua localização. Por favor, aguarde...'
-        })
-      this.gettingLocation = true
-      try {
-        this.gettingLocation = false
-        this.location = await this.getLocation()
-        this.address.latitude = this.location.coords.latitude
-        this.address.longitude = this.location.coords.longitude
-        this.$q.loading.hide()
-      } catch (e) {
-        this.gettingLocation = false
-         this.errorStr = e.message
-          this.$q.loading.hide()
-          this.$q.dialog({
-          title: 'Problema no carregamento da localização',
-          message: 'Não tem permissões para aceder a localização do dispositivo ou a função de localização encontra-se desligada.\n Por favor ligue a localização ou dê as permissões de localização'
-        }).onOk(() => {
-            this.address.latitude = -25.9678239
-          this.address.longitude = 32.5864914
-          this.$q.loading.hide()
-        })
-      }
-    }
-  }
 }
+
+const locateMe = async (val) => {
+       showloading()
+       gettingLocation.value = true
+      try {
+        gettingLocation.value = false
+        location.value = await getLocation()
+        address.value.latitude = location.value.coords.latitude
+        address.value.longitude = location.value.coords.longitude
+       closeLoading()
+      } catch (e) {
+        gettingLocation.value = false
+         errorStr.value = e.message
+        closeLoading()
+ alertWarningAction(
+    'Não tem permissões para aceder a localização do dispositivo ou a função de localização encontra-se desligada.\n Por favor ligue a localização ou dê as permissões de localização'
+  ).then((result) => {
+    if (result) {
+      address.value.latitude = -25.9678239
+     address.value.longitude = 32.5864914
+   closeLoading()
+    }
+  });
+      }
+}
+
+// props: ['indexEdit', 'utenteUpdate', 'mobilizer', 'showUtenteRegistrationScreenProp', 'numbers'],
+ //   emits: ['update:showUtenteRegistrationScreenProp'],
 </script>

@@ -42,7 +42,7 @@ export default {
   // WEB
   postWeb(params: string) {
     return api()
-      .post('clinic', params)
+      .post('district', params)
       .then((resp) => {
         district.save(resp.data);
       });
@@ -50,7 +50,7 @@ export default {
   getWeb(offset: number) {
     if (offset >= 0) {
       return api()
-        .get('clinic?offset=' + offset + '&max=100')
+        .get('district?offset=' + offset + '&max=100')
         .then((resp) => {
           district.save(resp.data);
           offset = offset + 100;
@@ -65,7 +65,7 @@ export default {
   },
   patchWeb(id: number, params: string) {
     return api()
-      .patch('clinic/' + id, params)
+      .patch('district/' + id, params)
       .then((resp) => {
         district
       .save(resp.data);
@@ -73,7 +73,7 @@ export default {
   },
   deleteWeb(id: number) {
     return api()
-      .delete('clinic/' + id)
+      .delete('district/' + id)
       .then(() => {
         district.destroy(id);
       });
@@ -126,4 +126,11 @@ export default {
   deleteAllFromStorage() {
     district.flush();
   },
+
+  getAllByProvinceId(provinceId: number) {
+   return district.query().withAll().where('province_id', provinceId).get()
+  },
+  getById(districtId: number) {
+    return district.query().withAll().whereId( districtId).first()
+   }
 };

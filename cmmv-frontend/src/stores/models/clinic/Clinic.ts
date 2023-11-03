@@ -3,7 +3,7 @@ import { Model } from 'pinia-orm'
 import Utente from '../utente/Utente'
 import District from '../district/District'
 import Province from '../province/Province'
-import db from 'src/store/localbase'
+// import db from 'src/store/localbase'
 
 
 export default class Clinic extends Model {
@@ -31,6 +31,7 @@ export default class Clinic extends Model {
     }
   }
 
+  /*
   static async apiGetAll () {
     return await this.api().get('/clinic')
   }
@@ -62,4 +63,5 @@ export default class Clinic extends Model {
   static localDbDeleteAll () {
     return db.newDb().collection('clinics').delete()
   }
+  */
 }

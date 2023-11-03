@@ -12,21 +12,20 @@
         <div class="col"><q-space /></div>
     </div>
 </template>
-<script>
-export default {
-    props: {
-        showUtenteRegistrationScreenProp: Boolean,
-        showPreviousButton: Boolean // previously was `value: String`
-    },
-    emits: ['update:showUtenteRegistrationScreenProp'],
-    methods: {
-        closeRegistration (close) {
-           this.$emit('update:showUtenteRegistrationScreenProp', close)
-        }
-     }
+
+<script setup>
+import pageHeader from 'components/Utente/UtenteRegistrationHeader.vue'
+import buttone from 'components/Shared/Button.vue'
+import { ref , inject } from 'vue'
+
+const showUtenteRegistrationScreenProp = inject('showUtenteRegistrationScreenProp')
+const showPreviousButton = inject('showPreviousButton')
+
+ // emits: ['update:showUtenteRegistrationScreenProp'],
+const closeRegistration = () => {
+        emit('update:showUtenteRegistrationScreenProp', close)
 }
 </script>
-
 <style>
 
 </style>

@@ -1,14 +1,13 @@
 <template>
-  <div class="q-pa-sm q-gutter-sm">
-    <q-dialog v-model="showdialog" persistent>
-    <q-layout view="Lhh lpR fff" container class="bg-white">
+     <q-layout view="Lhh lpR fff" container class="bg-white">
+    <div class="q-pa-sm q-gutter-sm">
     <q-header class="bg-primary">
       <q-toolbar>
         <q-toolbar-title class="text-subtitle1 flex-center">Ligar o Utente a uma Unidade Sanitária</q-toolbar-title>
         <q-btn flat v-close-popup round dense icon="close" @click="closeRegistration(false)"/>
       </q-toolbar>
     </q-header>
-      <q-page-container>
+    <q-page-container>
         <q-page padding>
         <q-card>
         <q-card-section>
@@ -17,7 +16,7 @@
             <q-img src="../../assets/userLogedIn.jpg"/>
           </q-avatar>
         </q-item-section>
-        <div class="text-h5 text-center" v-if="utente !== null">
+        <div class="text-h5 text-center" >
          {{utente.firstNames}} {{utente.lastNames}}
         </div>
         <div class="text-subtitle1 text-grey text-center">
@@ -57,7 +56,7 @@
                         <q-select v-model="myLocation.distance" :disable="myLocation.longitude.length <= 0" :options="rangekm" label="Raio de Pesquisa" />
                   </div>
                   <q-stepper-navigation class="row justify-center">
-                    <q-btn flat icon-right="navigate_next" :disable="myLocation.distance.length <= 0" @click="() => { this.getClinicInRange ('K'); done1 = true; step = 2 }" color="primary" label="Próximo" />
+                    <q-btn flat icon-right="navigate_next" :disable="myLocation.distance.length <= 0" @click="() => { getClinicInRange ('K'); done1 = true; step = 2 }" color="primary" label="Próximo" />
                   </q-stepper-navigation>
                 </q-step>
                 <q-step
@@ -66,8 +65,8 @@
                   icon="place"
                   :done="step > 2"
                   :header-nav="step > 2">
-                  <q-list v-if="this.clinics.length > 0" bordered padding class="rounded-borders text-primary">
-                    <q-item v-for="clinic in this.clinics" :key="clinic.id"
+                  <q-list v-if="clinics.length > 0" bordered padding class="rounded-borders text-primary">
+                    <q-item v-for="clinic in clinics" :key="clinic.id"
                       clickable
                       v-ripple
                       :active="link === clinic"
@@ -95,7 +94,7 @@
                   </q-list>
                   <q-stepper-navigation class="row justify-center">
                     <q-btn flat icon="chevron_left" @click="step = 1" color="primary" label="voltar" class="q-ml-sm"  v-if=isOn />
-                    <q-btn flat icon-right="chevron_right" :disable="this.link.length >= 0" @click="() => { done2 = true; step = 3 }" color="primary" label="Próximo" />
+                    <q-btn flat icon-right="chevron_right" :disable="link.length >= 0" @click="() => { done2 = true; step = 3 }" color="primary" label="Próximo" />
                   </q-stepper-navigation>
                 </q-step>
                 <q-step
@@ -127,70 +126,38 @@
                         </div>
                   <q-stepper-navigation class="row justify-center">
                     <q-btn flat icon="chevron_left" @click="step = 2" color="primary" label="Back" class="q-ml-sm" />
-                    <q-btn rounded color="primary" :loading="this.submitting" :disable="appointment.appointmentDate.length <=0" @click="() => { this.associar(); done3 = true; this.submitting = true}" label="Associar" />
+                    <q-btn rounded color="primary" :loading="submitting" :disable="appointment.appointmentDate.length <=0" @click="() => { associar(); done3 = true; submitting = true}" label="Associar" />
                   </q-stepper-navigation>
                 </q-step>
               </q-stepper>
             </div>
-        </q-page>
-    </q-page-container>
-    </q-layout>
-    </q-dialog>
+      </q-page>
+      </q-page-container>
   </div>
+</q-layout>
 </template>
-
-<script>
-import { ref } from 'vue'
+<script setup>
+import { ref,computed,watch,inject,onMounted } from 'vue'
 import { date, useQuasar, QSpinnerIos } from 'quasar'
-import Clinic from '../../store/models/clinic/Clinic'
+//import Clinic from '../../store/models/clinic/Clinic'
 // import Appointment from 'src/store/models/appointment/Appointment'
-import CommunityMobilizer from 'src/store/models/mobilizer/CommunityMobilizer'
+// import CommunityMobilizer from 'src/stores/models/mobilizer/CommunityMobilizer'
 import moment from 'moment'
-import Utente from '../../store/models/utente/Utente'
-import Appointment from '../../store/models/appointment/Appointment'
+import Utente from '../../stores/models/utente/Utente';
+import Appointment from '../../stores/models/appointment/Appointment'
 // import District from '../../store/models/district/District'
 // import { UserLogin } from '../../store/models/userLogin/UserLoginHierarchy'
 import { v4 as uuidv4 } from 'uuid'
 import isOnline from 'is-online'
+import utenteService from '../../services/api/utente/UtenteService'
+import communityMobilizerService from '../../services/api/mobilizer/CommunityMobilizerService'
+import { useRouter } from 'vue-router';
 // import db from 'src/store/localbase'
-export default {
-    props: ['utente', 'showUtenteULinkScreen', 'activeUSForm', 'isOn', 'showDialog'],
-    emits: ['update:showUtenteULinkScreen', 'update:utente', 'update:utente.appointments'],
-    data () {
-        const $q = useQuasar()
-        return {
-            filter: ref(''),
-            selected: ref([]),
-            step: ref(1),
-            link: ref(''),
-            clinics: [],
-            submitting: false,
-            $q,
-            location: null,
-            gettingLocation: false,
-            errorStr: null,
-            hourOptionsTime1: [8, 9, 10, 11, 12, 13, 14],
-            minuteOptionsTime1: [0, 15, 30, 45],
-            myLocation: {
-                latitude: '',
-                longitude: '',
-                distance: ''
-            },
-            rangekm: [
-              '<1km', '1km - 5km', '5km - 10km', '>10km'
-            ],
-            appointment: {
-                appointmentDate: '',
-                time: '',
-                clinic: {},
-                utente: {},
-                status: ''
-            },
-            optionsFn (newDate) {
-                return newDate >= date.formatDate(new Date(), 'YYYY-MM-DD HH:mm')
-            },
-            isOnline,
-            columns: [
+import { useLoading } from 'src/composables/shared/loading/loading';
+import { useSwal } from 'src/composables/shared/dialog/dialog';
+import clinicService from '../../services/api/clinic/clinicService'
+import appointmentService from '../../services/api/appointment/appointmentService';
+const columns = [
             {
               name: 'name',
               required: true,
@@ -209,81 +176,120 @@ export default {
               sortable: true
             }
           ]
-        }
-    },
-    computed: {
-         showdialog: {
-          get () {
-            return this.showUtenteULinkScreen
-          },
-          set (showUtenteULinkScreen) {
-            this.$emit('update:showdialog', showUtenteULinkScreen)
-        }
+const { closeLoading, showloading } = useLoading();
+const { alertSucess, alertError, alertInfo, alertWarningAction } = useSwal();
+const router = useRouter();
+const filter = ref('')
+const selected = ref([])
+const stepper = ref();
+const step = ref(1)
+const link = ref('')
+const clinics = ref([])
+const submitting = ref(false)
+const location = ref(null)
+const gettingLocation = ref(false)
+const errorStr = ref(null)
+const showUtenteULinkScreen = inject('showUtenteULinkScreen')
+const showUtenteRegistrationScreen = inject('showUtenteRegistrationScreen')
+const utente = inject('utente')
+const isOn = inject('isOn')
+const mobilizer = inject('mobilizer')
+
+const hourOptionsTime1 = ref([8, 9, 10, 11, 12, 13, 14])
+const minuteOptionsTime1 = ref([0, 15, 30, 45])
+const myLocation = ref({
+                latitude: '',
+                longitude: '',
+                distance: ''
+            })
+
+const rangekm = (['<1km', '1km - 5km', '5km - 10km', '>10km'])
+const appointment = ref(new Appointment())
+
+  const optionsFn = (newDate) => {
+return newDate >= date.formatDate(new Date(), 'YYYY-MM-DD HH:mm')
+  }
+
+  /*
+const showdialog = computed({
+ get() { 
+      return showUtenteULinkScreen
       },
-      relatedUtente: {
-        get () {
-            return this.utente
-          },
-          set (utente) {
-            Utente.update(utente)
-            this.$emit('update:utente', utente)
-        }
+      set (showUtenteULinkScreen) {
+       emit('update:showdialog', showUtenteULinkScreen)
       },
-      mobilizer: {
-      get () {
-        return CommunityMobilizer.query().with('utentes').find(this.$route.params.id)
+});
+*/
+const relatedUtente = computed({
+ get() { 
+      return utente.value
       },
-      set (mobilizer) {
-        CommunityMobilizer.update(mobilizer)
-      }
-    }
-    },
-    methods: {
-      moment,
-        date: ref(moment(date).format('YYYY/MM/DD')),
-        blockDataPassado (date) {
-            return date >= moment(new Date()).format('YYYY/MM/DD')
-        },
-     async associar () {
-            const newDate = new Date(this.appointment.appointmentDate, 'DD-MM-YYYY')
-            this.relatedUtente.clinic = this.link
-            this.relatedUtente.status = 'ENVIADO'
-            if (this.relatedUtente.syncStatus === 'S' || this.relatedUtente.syncStatus === 'U' || this.relatedUtente.syncStatus === null) {
-                  this.relatedUtente.syncStatus = 'U'
+      set (utente) {
+          utente.update(utente)
+           emit('update:utente', utente)
+      },
+});
+
+
+
+const date1 = ref(moment(date).format('YYYY/MM/DD'))
+
+const blockDataPassado = (date) => {
+   return date >= moment(new Date()).format('YYYY/MM/DD')
+}
+
+onMounted(() => {
+ // showloading();
+ // isOnlineChecker();
+ console.log('111'+utente)
+});
+
+const associar = async () => {
+   const newDate = new Date(appointment.value.appointmentDate, 'DD-MM-YYYY')
+             relatedUtente.value.clinic = link
+             relatedUtente.value.status = 'ENVIADO'
+            if ( relatedUtente.value.syncStatus === 'S' ||  relatedUtente.value.syncStatus === 'U' ||  relatedUtente.value.syncStatus === null) {
+                   relatedUtente.value.syncStatus = 'U'
              } else {
-                  this.relatedUtente.syncStatus = 'P'
+                   relatedUtente.value.syncStatus = 'P'
              }
-          this.appointment.id = uuidv4()
-          this.appointment.clinic = this.link
-          this.appointment.status = 'PENDENTE'
-          this.appointment.hasHappened = false
-          this.appointment.orderNumber = 1
-          this.appointment.visitDate = null
-          this.appointment.appointmentDate = moment(this.appointment.appointmentDate, 'DD-MM-YYYY').format('YYYY-MM-DD')
-          this.appointment.time = newDate.getHours() + ':' + newDate.getMinutes()
-          this.appointment.utente = this.relatedUtente
-          this.appointment.utente.id = this.relatedUtente.id
-          const appointmentLocalBase = JSON.parse(JSON.stringify(this.appointment))
-          this.relatedUtente.appointments.push(appointmentLocalBase)
-          const relatedUtenteLocalBase = JSON.parse(JSON.stringify(this.relatedUtente))
+         //    appointment.value.id = uuidv4()
+             appointment.value.clinic = link.value
+             appointment.value.status = 'PENDENTE'
+             appointment.value.hasHappened = false
+             appointment.value.orderNumber = 1
+             appointment.value.visitDate = null
+             appointment.value.appointmentDate = moment(appointment.value.appointmentDate, 'DD-MM-YYYY').format('YYYY-MM-DD')
+             appointment.value.time = newDate.getHours() + ':' + newDate.getMinutes()
+             appointment.value.utente = utente.value
+             appointment.value.utente.id =  utente.value.id
+             /*
+          const appointmentLocalBase = JSON.parse(JSON.stringify(appointment))
+           relatedUtente.value.appointments.push(appointmentLocalBase)
+          const relatedUtenteLocalBase = JSON.parse(JSON.stringify(relatedUtente))
           Appointment.localDbAdd(appointmentLocalBase)
           Utente.localDbUpdate(relatedUtenteLocalBase)
-          Appointment.insert({ data: this.appointment })
-          this.submitting = false
-          this.closeRegistration(false)
-          this.$emit('update:utente', this.relatedUtente)
-        },
-        closeRegistration (close) {
-          this.showdialog = ref(close)
-          this.step = 1
-          this.appointment = {}
-          this.submitting = false
-          this.$emit('update:showDialog', false)
-           this.activeUSForm(close, this.utente)
-          this.$emit('update:showUtenteULinkScreen', close)
-        },
-        async getLocation () {
-          return new Promise((resolve, reject) => {
+          Appointment.insert({ data: appointment })
+          */
+         console.log(appointment.value)
+         appointmentService.post(appointment.value)
+          submitting.value = false
+          closeRegistration(false)
+         // $emit('update:utente', relatedUtente)
+}
+
+const closeRegistration = (close) => {
+  // showdialog.value = ref(close)
+          step.value = 1
+          appointment.value = {}
+          submitting.value = false
+          showUtenteULinkScreen.value=false
+        //  emit('update:showDialog', false)
+   //    //  emit('update:showUtenteULinkScreen', close)
+}
+
+const getLocation = async() => {
+  return new Promise((resolve, reject) => {
             if (!('geolocation' in navigator)) {
               reject(new Error('Localização Geográfica não está disponível.' +
                                 'Por favor, ligue a Localização Geográfica no seu dispositivo.'))
@@ -293,36 +299,36 @@ export default {
         }, err => {
           reject(err)
         })
-      })
-    },
-    async locateMe () {
-        this.$q.loading.show({
-          spinner: QSpinnerIos,
-          message: 'Carregando a sua localização. Por favor, aguarde...'
-        })
-      this.gettingLocation = true
+  })
+}
+
+const locateMe = async () => {
+    showloading()
+      gettingLocation.value = true
       try {
-        this.gettingLocation = false
-        this.location = await this.getLocation()
-         this.myLocation.latitude = this.location.coords.latitude
-         this.myLocation.longitude = this.location.coords.longitude
-        this.$q.loading.hide()
+        gettingLocation.value = false
+        location.value = await getLocation()
+         myLocation.value.latitude = location.value.coords.latitude
+         myLocation.value.longitude = location.value.coords.longitude
+       closeLoading()
       } catch (e) {
-        this.gettingLocation = false
-         this.errorStr = e.message
-          this.$q.loading.hide()
-          this.$q.dialog({
-          title: 'Problema no carregamento da localização',
-          message: 'Não tem permissões para aceder a localização do dispositivo ou a função de localização encontra-se desligada.\n Por favor ligue a localização ou dê as permissões de localização \n O sistema vai assumir coordenadas padrão!'
-        }).onOk(() => {
-          this.myLocation.latitude = -25.967845 // -25.967845
-          this.myLocation.longitude = 32.586704 // 32.586704
-          this.$q.loading.hide()
-        })
+        gettingLocation.value = false
+         errorStr.value = e.message
+         closeLoading()
+         alertWarningAction(
+    'Não tem permissões para aceder a localização do dispositivo ou a função de localização encontra-se desligada.\n Por favor ligue a localização ou dê as permissões de localização'
+  ).then((result) => {
+    if (result) {
+      address.value.latitude = -25.9678239
+     address.value.longitude = 32.5864914
+   closeLoading()
+    }
+  })
       }
-    },
-    getDistance (lat1, lon1, lat2, lon2, unit) {
-      if ((lat1 === lat2) && (lon1 === lon2)) {
+}
+
+const getDistance = (lat1, lon1, lat2, lon2, unit) => {
+   if ((lat1 === lat2) && (lon1 === lon2)) {
         return 0
       } else {
         const radlat1 = Math.PI * lat1 / 180
@@ -340,84 +346,82 @@ export default {
         if (unit === 'N') { dist = dist * 0.8684 }
         return dist
       }
-    },
-    round (value, precision) {
+}
+
+const round = (value, precision) => {
     const multiplier = Math.pow(10, precision || 0)
     return Math.round(value * multiplier) / multiplier
-    },
-    getClinicInRange (unit) {
-      let calcDist = 0
+}
+
+const getClinicInRange = (unit) => {
+   let calcDist = 0
       let clinic = {}
-      this.clinics = []
-      console.log(this.myLocation.distance)
-      for (clinic of Clinic.query().with('province.*').with('district.*').where('district_id', this.mobilizer.district_id).get()) {
+      clinics.value = []
+      console.log(myLocation.value.distance)
+      console.log(clinicService.getLocalClinicsByDistrictId(mobilizer.value.district_id))
+      for (clinic of clinicService.getLocalClinicsByDistrictId(mobilizer.value.district_id)) {
          console.log(clinic)
         if (clinic.longitude !== undefined && clinic.longitude !== null) {
-        if (this.myLocation.distance.includes('<1km')) {
-          calcDist = this.getDistance(this.myLocation.latitude, this.myLocation.longitude, clinic.latitude, clinic.longitude, unit)
+        if (myLocation.value.distance.includes('<1km')) {
+          calcDist = getDistance(myLocation.value.latitude, myLocation.value.longitude, clinic.latitude, clinic.longitude, unit)
           if (calcDist <= 1000) {
-            clinic.distance = this.round(calcDist / 1000, 3)
-            this.clinics.push(clinic)
+            clinic.distance = round(calcDist / 1000, 3)
+            clinics.value.push(clinic)
           }
         } else {
-              if (this.myLocation.distance.includes('1km - 5km')) {
-                 calcDist = this.getDistance(this.myLocation.latitude, this.myLocation.longitude, clinic.latitude, clinic.longitude, unit)
+              if (myLocation.value.distance.includes('1km - 5km')) {
+                 calcDist = getDistance(myLocation.value.latitude, myLocation.value.longitude, clinic.latitude, clinic.longitude, unit)
                   if (calcDist > 1000 && calcDist <= 5000) {
-                    clinic.distance = this.round(calcDist / 1000, 2)
-                    this.clinics.push(clinic)
+                    clinic.distance = round(calcDist / 1000, 2)
+                    clinics.value.push(clinic)
                   }
               } else {
-                if (this.myLocation.distance.includes('5km - 10km')) {
-                    calcDist = this.getDistance(this.myLocation.latitude, this.myLocation.longitude, clinic.latitude, clinic.longitude, unit)
+                if (myLocation.value.distance.includes('5km - 10km')) {
+                    calcDist = getDistance(myLocation.value.latitude, myLocation.value.longitude, clinic.latitude, clinic.longitude, unit)
                      console.log(calcDist)
                     if (calcDist > 5000 && calcDist <= 10000) {
-                      clinic.distance = this.round(calcDist / 1000, 2)
-                      this.clinics.push(clinic)
+                      clinic.distance = round(calcDist / 1000, 2)
+                      clinics.value.push(clinic)
                     }
                   } else {
-                      calcDist = this.getDistance(this.myLocation.latitude, this.myLocation.longitude, clinic.latitude, clinic.longitude, unit)
+                      calcDist = getDistance(myLocation.value.latitude, myLocation.value.longitude, clinic.latitude, clinic.longitude, unit)
                       if (calcDist > 10000) {
-                          clinic.distance = this.round(calcDist / 100, 2)
-                          this.clinics.push(clinic)
+                          clinic.distance = round(calcDist / 100, 2)
+                          clinics.value.push(clinic)
                     }
                   }
                 }
               }
           }
         }
-        return this.clinics
-      }
-    },
-    created () {
-    },
- mounted () {
- },
-  watch: {
-        showUtenteULinkScreen: function (newVal, oldVal) {
-          console.log('Prop changed: ', newVal, ' | was: ', oldVal)
-           if (!this.isOn) {
-             this.getClinicInRange('K')
-      this.done1 = true
-       this.step = 2
-           } else {
-               this.done1 = false
-       this.step = 1
-           }
-           if (this.myLocation.latitude !== undefined && this.myLocation.latitude !== null) {
-      this.myLocation.latitude = ''
-      this.myLocation.longitude = ''
-      this.myLocation.distance = ''
-      this.link = ref('')
-      this.appointment.appointmentDate = ''
-      this.submitting = false
-     }
-        }
-        },
-    components: {
-        // buttone: require('components/Shared/Button.vue').default
-        // pageHeader: require('components/Utente/UtenteRegistrationHeader.vue').default
-    }
+        return clinics
 }
+
+watch(
+  () => showUtenteULinkScreen.value,
+  console.log('Prop changed: ', ' | was: '),
+  () => {
+   if (!isOn) {
+             getClinicInRange('K')
+      done1 = true
+       step.value = 2
+           } else {
+               done1 = false
+       step.value = 1
+           }
+           if (myLocation.value.latitude !== undefined && myLocation.value.latitude !== null) {
+      myLocation.value.latitude = ''
+      myLocation.value.longitude = ''
+      myLocation.value.distance = ''
+      link = ref('')
+      appointment.value.appointmentDate = ''
+      submitting.value = false
+    }
+  }
+);
+
+//    props: ['utente', 'showUtenteULinkScreen', 'activeUSForm', 'isOn', 'showDialog'],
+ //   emits: ['update:showUtenteULinkScreen', 'update:utente', 'update:utente.appointments'],
 </script>
 <style lang="sass">
 .my-menu-link

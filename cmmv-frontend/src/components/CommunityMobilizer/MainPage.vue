@@ -5,10 +5,9 @@
   <offline detected-condition="handleConnectivityChange">
   <div class="q-pa-sm">
   <utente-registration
-                v-if="this.showUtenteRegistrationScreen" :mobilizer="mobilizer" v-model:utenteUpdate="utente" v-model:indexEdit="indexEdit"
-                v-model:showUtenteRegistrationScreenProp="showUtenteRegistrationScreen"/>
+                v-if="showUtenteRegistrationScreen"/>
    </div>
-   <div v-if="!this.showUtenteRegistrationScreen">
+   <div v-if="!showUtenteRegistrationScreen">
     <q-card :square="false" class="q-mt-sm qmr-sr">
     <div class="column bg-primary" style="height: 190px">
         <q-toolbar>
@@ -19,14 +18,14 @@
         </q-toolbar>
     </div>
       <q-drawer v-model="leftDrawerOpen" show-if-above bordered content-class="text-gray-8" >
-      <q-card class="bg-primary" v-if="this.mobilizer !== null">
+      <q-card class="bg-primary" v-if="mobilizer !== null && mobilizer !== undefined">
         <q-card-section class="flex flex-center q-ma-lg" avatar>
           <q-avatar class="q-py-lg" size="90px">
             <img src="../../assets/User-Profile.png">
           </q-avatar>
         </q-card-section>
-          <div class="text-h6 text-white text-weight-bolder text-center">{{this.mobilizer.firstNames}} {{this.mobilizer.lastNames}}</div>
-          <div class="text-subtitle2 text-white text-center">{{ this.mobilizer.cellNumber }}</div>
+          <div class="text-h6 text-white text-weight-bolder text-center" >{{mobilizer.firstNames}} {{mobilizer.lastNames}}</div>
+          <div class="text-subtitle2 text-white text-center">{{ mobilizer.cellNumber }}</div>
       </q-card>
 
       <q-list padding class="q-my-lg">
@@ -79,8 +78,8 @@
       </div>
     </q-card-section>
      <q-card-section class="q-pt-xl">
-        <div class="text-h5 text-center" v-if="this.mobilizer !== null">
-         {{this.mobilizer.firstNames}} {{this.mobilizer.lastNames}}
+        <div class="text-h5 text-center" v-if="mobilizer !== null">
+         {{mobilizer.firstNames}} {{mobilizer.lastNames}}
         </div>
         <div class="text-h6 text-grey text-center">
           Mobilizador Comunitário
@@ -88,7 +87,7 @@
       </q-card-section>
     </q-card>
     <q-space/>
-    <div class="q-pt-xl q-gutter-xl flex flex-center" style="row" v-if="this.optionButtons">
+    <div class="q-pt-xl q-gutter-xl flex flex-center" style="row" v-if="optionButtons">
           <q-btn
             outline
             push
@@ -97,7 +96,7 @@
             color=“primary”
             padding="xl"
             class="text-primary"
-            @click="this.optionButtons = false, this.docsDisplay = false, this.clientsManager = true">
+            @click="optionButtons = false, docsDisplay = false, clientsManager = true">
              <div class="">
              <q-icon name="group" size="100px"/>
              <div>UTENTES</div>
@@ -111,14 +110,14 @@
               color=“primary”
               padding="xl"
               class="text-primary"
-              @click="this.optionButtons = false, this.clientsManager = false, this.docsDisplay = true">
+              @click="optionButtons = false, clientsManager = false, docsDisplay = true">
               <div class="">
               <q-icon name="snippet_folder" size="100px"/>
               <div>MATERIAL EDUCATIVO</div>
               </div>
         </q-btn>
     </div>
-     <div class="q-pa-md" style="max-width: 100%" v-if="this.clientsManager">
+     <div class="q-pa-md" style="max-width: 100%" v-if="clientsManager">
             <q-tabs
               v-model="tab"
                 active-color="white"
@@ -146,18 +145,14 @@
                 </q-tab-panel>
                 <q-tab-panel name="associados">
                   <utentes-view-list
-                        v-if="this.mobilizer"
-                        :mobilizer="mobilizer"
+                        v-if="mobilizer"
                         :utentes="utentesAssociados"
-                        v-model:indexEdit="indexEdit"
-                        v-model:utenteEdit="utente"
-                        v-model:showUtenteULinkScreenProp="showUtenteULinkScreen"
-                        v-model:showUtenteRegistrationScreen="showUtenteRegistrationScreen" />
+                        />
                     <q-page-sticky position="bottom-left" :offset="[18, 18]">
-                      <q-btn flat round color="primary" icon="west" @click="this.optionButtons = true, this.clientsManager = false, this.docsDisplay = false" />
+                      <q-btn flat round color="primary" icon="west" @click="optionButtons = true, clientsManager = false, docsDisplay = false" />
                     </q-page-sticky>
                     <q-page-sticky position="bottom-right" :offset="[18, 18]">
-                      <q-btn size="xl" fab icon="add" @click="editUtente()" color="primary" />
+                      <q-btn size="xl" fab icon="add" @click="addUtente()" color="primary" />
                     </q-page-sticky>
                 </q-tab-panel>
                 <q-tab-panel name="enviados">
@@ -166,11 +161,11 @@
               </q-tab-panels>
             </div>
      </div>
-    <div class="q-pa-md" style="max-width: 100%" v-if="this.docsDisplay">
+    <div class="q-pa-md" style="max-width: 100%" v-if="docsDisplay">
       <q-separator />
         <view-docs :showDownload=true />
         <q-page-sticky position="bottom-left" :offset="[18, 18]">
-          <q-btn flat round color="primary" icon="west" @click="this.optionButtons = true, this.clientsManager = false, this.docsDisplay = false" />
+          <q-btn flat round color="primary" icon="west" @click="optionButtons = true, clientsManager = false, docsDisplay = false" />
         </q-page-sticky>
     </div>
       </div>
@@ -187,44 +182,53 @@
         </offline>
   </q-layout>
 </template>
-<script>
-import { ref } from 'vue'
-import { useQuasar, Notify, QSpinnerIos } from 'quasar'
-import Utente from 'src/store/models/utente/Utente'
-import CommunityMobilizer from 'src/store/models/mobilizer/CommunityMobilizer'
-import Clinic from 'src/store/models/clinic/Clinic'
-import Province from 'src/store/models/province/Province'
-import District from 'src/store/models/district/District'
-import SyncronizingService from '../../services/SyncronizingService'
-import db from 'src/store/localbase'
+<script setup>
+import { ref,onMounted,computed,onBeforeUnmount,provide } from 'vue'
+import { useQuasar, QSpinnerIos } from 'quasar'
+import Utente from '../../stores/models/utente/Utente';
+import CommunityMobilizer from '../../stores/models/mobilizer/CommunityMobilizer'
+import Clinic from '../../stores/models/clinic/Clinic'
+import Province from '../../stores/models/province/Province'
+import District from '../../stores/models/district/District'
+// import SyncronizingService from '../../services/SyncronizingService'
+import db from 'src/stores/localbase'
 import isOnline from 'is-online'
-import Appointment from '../../store/models/appointment/Appointment'
-// import Appointment from '../../store/models/appointment/Appointment'
-export default {
-  setup () {
-    const $q = useQuasar()
-    const timerToSyncronizeConst = 0
-    localStorage.setItem('isProcessing', 'false')
-   // const isProcessingSync = ref(0)
-    return {
-       tab: ref('associados'),
-       leftDrawerOpen: ref(false),
-       showUtenteRegistrationScreen: ref(false),
-       showUtenteULinkScreen: ref(false),
-       clientList: ref(false),
-       optionButtons: ref(true),
-       clientsManager: ref(false),
-       docsDisplay: ref(false),
-       indexEdit: 1,
-       showMobilizerRegistrationScreen: ref(false),
-       showChangePasswordScreen: ref(false),
-       editMode: false,
-     //  isProcessingSync,
-       timerToSyncronizeConst,
-       $q,
-       isOnline,
-       utente: {
-            firstNames: '',
+import Appointment from '../../stores/models/appointment/Appointment'
+import communityMobilizerService from '../../services/api/mobilizer/CommunityMobilizerService';
+import utenteService from '../../services/api/utente/UtenteService'
+import { useRouter,useRoute } from 'vue-router';
+import utenteRegistration from 'components/Utente/UtenteRegistration.vue';
+import utentesViewList from 'components/Shared/ViewUtenteList.vue';
+ import viewDocs from 'components/Home/MaterialEducativo.vue';
+import { useLoading } from 'src/composables/shared/loading/loading';
+// import addMobilizer from 'components/Clinic/AddMobilizer.vue';
+// import changePassword from 'components/Shared/ChangePassword.vue';
+import { Notify } from 'quasar'
+import provinceService from 'src/services/api/province/provinceService';
+import districtService from 'src/services/api/district/districtService';
+
+const { closeLoading, showloading } = useLoading();
+
+const tab = ref('');
+const leftDrawerOpen = ref(false);
+const showUtenteRegistrationScreen = ref(false);
+const showUtenteULinkScreen = ref(false);
+const clientList = ref(false);
+const optionButtons = ref(true);
+const clientsManager = ref(false);
+const docsDisplay = ref(false);
+const indexEdit =  ref(1);
+const showMobilizerRegistrationScreen = ref(false);
+const showChangePasswordScreen = ref(false)
+const editMode = ref(false);
+const timerToSyncronizeConst = ref(0);
+const $q = useQuasar();
+const router = useRouter();
+const route = useRoute();
+
+const utenteToEdit = ref();
+/*
+const utente = ref({ firstNames: '',
             lastNames: '',
             birthDate: '',
             cellNumber: '',
@@ -237,80 +241,38 @@ export default {
             age: '',
             status: 'PENDENTE',
             addresses: [],
-            communityMobilizer: {}
-        }
-      }
-  },
-  computed: {
-     mobilizer: {
-      get () {
-        return CommunityMobilizer.query().with('utentes').find(this.$route.params.id)
-      },
-      set (mobilizer) {
-        CommunityMobilizer.update(mobilizer)
-      },
-      allUtente: {
-        get () {
-          return Utente.query().all
-        },
-        set (utente) {
-        Utente.update(utente)
-      }
-      }
-    },
-    getAllNewClinics () {
-      return Clinic.query().get()
-    },
-    utentesPendente () {
-      return Utente.query()
-                   .with('clinic.province')
-                   .with('clinic.district.province')
-                   .with('communityMobilizer')
-                   .with('appointments.clinic.province')
-                   .with('appointments.clinic.district.province')
-                   .with('addresses.district')
-                   .where('status', 'PENDENTE')
-                   .orderBy('firstNames')
-                   .get()
-    },
-     utentesAssociados () {
-       return Utente.query()
-                   .with('clinic.province')
-                   .with('clinic.district.province')
-                   .with('communityMobilizer')
-                   .with('appointments.clinic.province')
-                   .with('appointments.clinic.district.province')
-                   .with('addresses.district')
-                   .with('addresses.district.province')
-                   .where('status', 'ASSOCIADO')
-                   .orderBy('firstNames')
-                   .get()
-    },
-     utentesEnviados () {
-      return Utente.query()
-                   .with('clinic.province')
-                   .with('clinic.district.province')
-                   .with('communityMobilizer')
-                   .with('appointments.clinic')
-                   .with('appointments.clinic.province')
-                   .with('appointments.clinic.district.province')
-                   .with('addresses.district')
-                   .with('addresses.district.province')
-                   .where('status', 'ENVIADO')
-                   .orderBy('firstNames')
-                   .get()
-    }
-  },
-  methods: {
-     async getAllUtente (offset) {
-      let utentesApiList = []
-      await Utente.api().get('/utente/communityMobilizer/' + this.$route.params.id).then(resp => {
+            communityMobilizer: {}})
+            */
+// const utente = ref(new Utente())
+ localStorage.setItem('isProcessing', 'false')
+
+const mobilizer = computed(() => {
+  console.log(communityMobilizerService.getMobilizerById(route.params.id))
+  return communityMobilizerService.getMobilizerById(route.params.id)
+});
+
+const utentesPendente =  computed(() => {
+  return utenteService.getLocalPendingUtentes();
+});
+
+const utentesAssociados =  computed(() => {
+  return utenteService.getLocalUtentesAssociados();
+});
+
+const utentesEnviados =  computed(() => {
+  return utenteService.getLocalUtentesEnviados();
+});
+
+const getAllUtente = async () => {
+  /*
+ let utentesApiList = []
+      await Utente.api().get('/utente/communityMobilizer/' + route.params.id).then(resp => {
              offset = offset + 100
              utentesApiList = resp.response.data
              Utente.localDbGetAll().then(utentes => {
                if (utentes.length === 0) {
                   utentesApiList.forEach(utente => {
-                    utente.communityMobilizer = this.mobilizer
+                    utente.communityMobilizer = mobilizer
                     if (utente.syncStatus === undefined || utente.syncStatus === null) {
                         utente.syncStatus = 'S'
                     }
@@ -318,14 +280,16 @@ export default {
                  })
                }
              })
-              this.$q.loading.hide()
+              $q.loading.hide()
         }).catch(error => {
-           this.$q.loading.hide()
+           $q.loading.hide()
             console.log(error)
-        })
-     },
-     async getAllClinics (offset) {
-        await Clinic.api().get('/clinic?offset=' + offset + '&max=100').then(resp => {
+        }) 
+        */
+        utenteService.apiFetchByMobilizer(route.params.id)
+}
+const getAllClinics = async (offset) => {
+  await Clinic.api().get('/clinic?offset=' + offset + '&max=100').then(resp => {
             offset = offset + 100
              this.$q.loading.hide()
             // if (resp.response.data.length > 0) {
@@ -335,41 +299,41 @@ export default {
                 console.log(error)
                 this.$q.loading.hide()
             })
-    },
-    async getAllProvinces (offset) {
-        await Province.api().get('/province?offset=' + offset + '&max=100').then(resp => {
+}
+const getAllProvinces = async (offset) => {
+    await Province.api().get('/province?offset=' + offset + '&max=100').then(resp => {
             offset = offset + 100
             // if (resp.response.data.length > 0) {
-            //   setTimeout(this.getAllClinics(offset), 2)
+            //   setTimeout(getAllClinics(offset), 2)
             // }
             }).catch(error => {
                 console.log(error)
             })
-    },
-    async getAllDistricts (offset) {
-        await District.api().get('/district?offset=' + offset + '&max=100').then(resp => {
+}
+
+const getAllDistricts = async (offset) => {
+    await Province.api().get('/province?offset=' + offset + '&max=100').then(resp => {
             offset = offset + 100
-            this.$q.loading.hide()
+            // if (resp.response.data.length > 0) {
+            //   setTimeout(getAllClinics(offset), 2)
+            // }
             }).catch(error => {
-               this.$q.loading.hide()
                 console.log(error)
             })
-    },
-     async getMobilizer () {
-       await CommunityMobilizer.api().get('/communityMobilizer/' + localStorage.getItem('id_mobilizer')).then(resp => {
-         const mobilizer = resp.response.data
-               mobilizer.utentes = []
-             CommunityMobilizer.localDbAdd(mobilizer)
-      }).catch(error => {
-          console.log(error)
-      })
-     },
-     async getDataLocalBase () {
-      Utente.deleteAll()
+}
+
+const getMobilizer = async () => {
+  return communityMobilizerService.apiFetchById(route.params.id)
+}
+
+const getDataLocalBase = async () => {
+  utenteService.getMobile()
+  /*  
+  Utente.deleteAll()
       Appointment.deleteAll()
       const utentesList = await Utente.localDbGetAll()
       utentesList.forEach(utente => {
-        utente.communityMobilizer = this.mobilizer
+        utente.communityMobilizer = mobilizer
         Utente.insert({
           data: utente
         })
@@ -389,44 +353,53 @@ export default {
           data: clinics
         })
       })
-    },
-    timerToSyncronize () {
-    this.timerToSyncronizeConst = setInterval(() => {
-    this.checkOnlineToSync1()
-      }, 3600000) // 3600000 timer to sycronize hour to hour
-    },
-     editUtente () {
-       this.showUtenteRegistrationScreen = true
-       this.indexEdit = 1
-     },
-     editMobilizer (mobilizer) {
-        this.mobilizer = Object.assign({}, mobilizer)
-         this.showMobilizerRegistrationScreen = true
-         this.editModeMobilizer = true
-      },
-      changePassword () {
-         this.showChangePasswordScreen = true
-      },
-      setMobilizerLocalBase () {
-        const mobilizer = this.mobilizer
+      */
+}
+
+const timerToSyncronize = () => {
+  timerToSyncronizeConst.value = setInterval(() => {
+    checkOnlineToSync1()
+      }, 3600000) //
+}
+
+const addUtente = () => {
+  showUtenteRegistrationScreen.value = true
+      indexEdit.value = 1
+}
+
+const editMobilizer = () => {
+  mobilizer.value = Object.assign({}, mobilizer)
+  showMobilizerRegistrationScreen.value = true
+  editModeMobilizer.value = true
+}
+
+const changePassword = () => {
+  showChangePasswordScreen.value = true
+}
+
+const setMobilizerLocalBase = () => {
+     const mobilizer = mobilizer
         db.newDb().collection('mobilizer').add({
           mobilizer
           })
-      },
-      setClinics () {
-        db.newDb().collection('clinics').get().then(clinics => {
+}
+
+const setClinics = () => {
+     db.newDb().collection('clinics').get().then(clinics => {
           Clinic.insert({
             data: clinics
           })
         })
-      },
-      handleConnectivityChange (status) {
-      console.log(status)
-    },
-    async isOnlineChecker (sync) {
+}
+
+const handleConnectivityChange = (status) => {
+     console.log(status)
+}
+
+const isOnlineChecker = async (sync) => {
       await isOnline().then(resp => {
         if (resp === true && sync === true) {
-          this.verificationDialog()
+          verificationDialog()
         } else if (resp === false && sync === true) {
            Notify.create({
                     icon: 'announcement',
@@ -465,27 +438,28 @@ export default {
                   })
         }
       }).catch(error => {
-        this.$q.loading.hide()
+          closeLoading();
         console.log(error)
       })
-    },
-   sendUtente () {
-     SyncronizingService.sendUtentes()
-      // SyncronizingService.sendMobilizerData()
-      // SyncronizingService.sendUserDataPassUpdated()
-     },
-  checkOnlineToSync1 () {
-      isOnline().then(resp => {
+}
+
+const sendUtente = (status) => {
+  // SyncronizingService.sendUtentes()
+}
+
+const checkOnlineToSync1 = (status) => {
+   isOnline().then(resp => {
       if (resp === true) {
-        this.sendUtente()
+        sendUtente()
         return true
       } else if (resp === false) {
         return false
       }
       })
-    },
-     verificationDialog () {
-            this.$q.dialog({
+}
+
+const verificationDialog = () => {
+      $q.dialog({
                 title: 'Confirmação',
                 message: 'Tem a certeza que deseja efectuar a sincronização? Os dados enviados já não poderão ser editados após a sincronização',
                 ok: {
@@ -536,8 +510,8 @@ export default {
                             classes: 'glossy'
                           })
                 } else {
-                   this.sendUtente()
-                // this.$emit('update:showUtenteRegistrationScreenProp', false)
+                   sendUtente()
+                // $emit('update:showUtenteRegistrationScreenProp', false)
                 }
                 })
             }).onCancel(() => {
@@ -546,20 +520,27 @@ export default {
                 // console.log('I am triggered on both OK and Cancel')
             })
         }
-  },
-  mounted () {
-   this.$q.loading.show({
-         spinner: QSpinnerIos,
-         message: 'Por favor, aguarde...'
-    })
+
+onMounted(() => {
+//  showloading();
+  getMobilizer();
+       provinceService.get(0);
+   districtService.get(0);
+  init();
+});
+
+const init = () => {
+     // showloading();
     const offset = 0
-    this.isOnlineChecker(false)
-    this.getDataLocalBase()
-    this.timerToSyncronize()
+    isOnlineChecker(false)
+    getAllUtente()
+    getDataLocalBase()
+   timerToSyncronize()
+   /*
     CommunityMobilizer.localDbGetAll().then(mobilizers => {
       if (mobilizers.length === 0) {
-        this.getMobilizer()
-        this.getAllUtente(offset)
+        getMobilizer()
+        getAllUtente(offset)
       } else {
         console.log(mobilizers)
         mobilizers.utentes = []
@@ -568,22 +549,21 @@ export default {
           data: mobilizers
         })
       }
-       this.$q.loading.hide()
+       closeloading()
     })
-  },
-  created () {
-  },
-   beforeUnmount () {
-   clearInterval(this.timerToSyncronizeConst)
-  },
-  components: {
-     'utente-registration': require('components/Utente/UtenteRegistration.vue').default,
-     'utentes-view-list': require('components/Shared/ViewUtenteList.vue').default,
-     'view-docs': require('components/Home/MaterialEducativo.vue').default,
-      addMobilizer: require('components/Clinic/AddMobilizer.vue').default,
-      changePassword: require('components/Shared/ChangePassword.vue').default
-    }
+    */
 }
+
+onBeforeUnmount(() => {
+  clearInterval(timerToSyncronizeConst)
+});
+
+
+provide('showUtenteULinkScreen', showUtenteULinkScreen);
+provide('showUtenteRegistrationScreen', showUtenteRegistrationScreen);
+provide('mobilizer', mobilizer);
+provide('indexEdit',indexEdit)
+provide('utenteToEdit',utenteToEdit)
 </script>
 <style>
 .scroll-area{

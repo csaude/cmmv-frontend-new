@@ -13,15 +13,12 @@
 </transition-group>
 </template>
 
-<script>
-    export default {
-        props: ['clinic'],
-        data () {
-            return {
-                confirmed: false
-            }
-        }
-    }
+<script setup>
+import { inject,ref } from 'vue'
+
+const clinic = inject('clinic')
+const confirmed = ref(false)
+
 </script>
 
 <style>

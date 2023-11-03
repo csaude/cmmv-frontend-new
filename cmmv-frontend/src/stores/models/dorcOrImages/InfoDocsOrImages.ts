@@ -1,5 +1,5 @@
 import { Model } from 'pinia-orm'
-import db from 'src/store/localbase'
+// import db from 'src/store/localbase'
 
 export default class InfoDocsOrImages extends Model {
   static entity = 'infodocsOrImages'
@@ -19,6 +19,7 @@ export default class InfoDocsOrImages extends Model {
     }
   }
 
+  /*
   static localDbAdd (infodocsOrImage) {
     return db.newDb().collection('infodocsOrImages').add(infodocsOrImage)
   }
@@ -46,4 +47,5 @@ export default class InfoDocsOrImages extends Model {
   static localDbDeleteAll () {
     return db.newDb().collection('infodocsOrImages').delete()
   }
+  */
 }

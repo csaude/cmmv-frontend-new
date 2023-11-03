@@ -26,56 +26,61 @@
         </div>
   </q-page>
 </template>
-<script>
+<script setup>
 import { date } from 'quasar'
-import Appointment from '../../store/models/appointment/Appointment'
-import Utente from '../../store/models/utente/Utente'
+import appointmentService from '../../services/api/appointment/appointmentService'
+import utenteService from '../../services/api/utente/UtenteService'
+import { ref , inject } from 'vue'
 
-export default {
-    props: ['utente', 'appointmentToUpdate'],
-    data () {
-        return {
-            hourOptionsTime1: [8, 9, 10, 11, 12, 13, 14],
-            minuteOptionsTime1: [0],
-            appointment: {
+const utente = inject('utente')
+const appointmentToUpdate = inject('appointmentToUpdate')
+
+const hourOptionsTime1 = ref([8, 9, 10, 11, 12, 13, 14])
+const minuteOptionsTime1 = ref([0])
+const appointment = ref({
                     appointmentDate: '',
                     time: '',
                     utente: null,
                     clinic: null,
                     status: ''
-                },
-            optionsFn (newDate) {
-                return newDate >= date.formatDate(Date.now(), 'YYYY/MM/DD')
+                })
+
+const optionsFn = (newDate) => {
+     return newDate >= date.formatDate(Date.now(), 'YYYY/MM/DD')
+}
+
+const checkIfIsUpdate = () => {
+      if (appointmentToUpdate != null && appointmentToUpdate.id > 0) {
+                appointment = appointmentToUpdate
+               appointment.appointmentDate = formatDate(this.appointment.appointmentDate)
+                appointment.utente = utenteService.getLocalUtenteById(appointment.utente_id)
             }
-        }
-    },
-    mounted () {
-        this.checkIfIsUpdate()
-    },
-    methods: {
-        confirm () {
-            if (this.appointment.id <= 0) {
-                this.appointment.utente = this.utente
-                this.appointment.status = 'PENDENTE'
-                this.appointment.clinic = this.utente.clinic
+}
+
+const formatDate = (value) => {
+  return date.formatDate(value, 'YYYY/MM/DD')
+}
+
+const confirm = () => {
+ if (appointment.value.id <= 0) {
+                appointment.value.utente = utente
+                appointment.value.status = 'PENDENTE'
+                appointment.value.clinic = utente.clinic
             }
-            this.appointment.appointmentDate = new Date(this.appointment.appointmentDate)
-            Appointment.api().post('/appointment', this.appointment).then(resp => {
-                this.$emit('goHome', this.appointment.utente)
+            appointment.value.appointmentDate = new Date(appointment.value.appointmentDate)
+            appointmentService.post(appointment.value).then(resp => {
+                 emit('goHome', appointment.utente)
             }).catch(error => {
                 console.log(error)
             })
-        },
-        checkIfIsUpdate () {
-            if (this.appointmentToUpdate != null && this.appointmentToUpdate.id > 0) {
-                this.appointment = this.appointmentToUpdate
-                this.appointment.appointmentDate = this.formatDate(this.appointment.appointmentDate)
-                this.appointment.utente = Utente.find(this.appointment.utente_id)
-            }
-        },
-        formatDate (value) {
-            return date.formatDate(value, 'YYYY/MM/DD')
-        }
-    }
+            /*
+            Appointment.api().post('/appointment', appointment).then(resp => {
+               emit('goHome', appointment.utente)
+            }).catch(error => {
+                console.log(error)
+            })
+            */
 }
+
 </script>
+

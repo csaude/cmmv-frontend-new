@@ -21,65 +21,54 @@
           <div>
         <q-btn label="Carregar" type="submit" color="primary"  :loading="submitting"/>
       </div>
-       <view-docs :showDownload=false />
+       <viewDocs :showDownload=false />
        </q-form>
 </template>
-<script>
+<script setup>
 import { ref } from 'vue'
 import InfoDocsOrImages from '../../store/models/dorcOrImages/InfoDocsOrImages'
 import { QSpinnerIos } from 'quasar'
-export default {
-  data () {
-    return {
-      file: ref(null)
-    }
-  },
-    methods: {
-           onSubmit () {
-             if (this.file !== null) {
-                 this.$q.loading.show({
-          spinner: QSpinnerIos,
-          message: 'Gravando o Documento. Por favor, aguarde...'
-        })
-                this.submitting = true
+import { useLoading } from 'src/composables/shared/loading/loading';
+import viewDocs from 'components/Home/MaterialEducativo.vue'
+const file = ref(null)
+const submitting = ref(false);
+const { closeLoading, showloading } = useLoading();
+
+
+const onSubmit = () => {
+    if (file.value !== null) {
+               showloading()
+               submitting.value = true
             // doc.title =this.file.name
          //   doc.createdDate = this.file.lastModifiedDate
          //   doc.publishedDate = this.file.lastModifiedDate
        //  console.log(this.formData)
         const formData = new FormData()
-        formData.append('title', this.file.name)
+        formData.append('title', file.value.name)
     //    formData.append('createdDate', doc.createdDate)
     //    formData.append('publishedDate', doc.publishedDate)
         formData.append('forMobilizer', true)
-        formData.append('blop', this.file)
+        formData.append('blop', file.value)
                  InfoDocsOrImages.api().post('/infoDocsOrImages', formData).then(resp => {
               //  offset = offset + 100
                 console.log(resp.response.data)
-                 this.submitting = false
-                this.$q.notify({
+                    submitting.value = false
+                $q.notify({
               message: 'Documento carregado com sucesso.',
               color: 'teal'
           })
-          this.file = null
-          this.$q.loading.hide()
+          file.value = null
+         closeLoading()
             }).catch(error => {
-                 this.$q.loading.hide()
+              closeLoading()
                 console.log(error)
             })
             } else {
-              this.$q.notify({
+              $q.notify({
               message: 'Escolha o Documento e depois Submeta',
               color: 'red'
           })
             }
-       // data.push(this.file)
-
-       // submitResult.value = data
-       // submitEmpty.value = data.length === 0
-      }
-    },
-     components: {
-     'view-docs': require('components/Home/MaterialEducativo.vue').default
-    }
 }
 </script>
+

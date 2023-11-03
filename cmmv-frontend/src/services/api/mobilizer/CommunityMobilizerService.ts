@@ -79,6 +79,14 @@ export default {
         communityMobilizer.destroy(id);
       });
   },
+  async apiFetchById(id: number) {
+    return await api()
+      .get(`/communityMobilizer/${id}`)
+      .then((resp) => {
+        communityMobilizer.save(resp.data);
+        return resp;
+      });
+  },
   // Mobile
   putMobile(params: string) {
     return nSQL(CommunityMobilizer
@@ -128,4 +136,11 @@ export default {
   deleteAllFromStorage() {
     communityMobilizer.flush();
   },
+  getMobilizerById(id :number) {
+    console.log(communityMobilizer.query().with('utentes').where('id', id).first())
+   return communityMobilizer.query().with('utentes').where('id', id).first();
+  },
+  update(mobilizer :any) {
+    communityMobilizer.save(mobilizer);
+  }
 };

@@ -35,22 +35,16 @@
     </div>
   </q-page>
 </template>
-<script>
-export default {
-    props: ['utente'],
-    data () {
-        return {
-            lorem:
-                'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.',
+<script setup>
+import pageHeader from 'components/Utente/UtenteRegistrationHeader.vue'
+import buttone from 'components/Shared/Button.vue'
+import { ref , inject } from 'vue'
 
-            appointment: {
-                date: '20/11/2021',
+const utente = inject('utente')
+const appointment = ref({
+     date: '20/11/2021',
                 time: '12:00 AM',
                 clinic: 'CS Boane',
                 orderNumber: '3'
-            }
-        }
-    },
-    components: {}
-}
+})
 </script>

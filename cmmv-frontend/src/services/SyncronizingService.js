@@ -137,8 +137,7 @@ export default {
         sendUserDataPassUpdated () {
             db.newDb().collection('users').get().then(mobilizers => {
                 const user = mobilizers[0]
-                UserLogin.api().patch('/secUser/' + user.idUser, user).then(resp => {
-            }).catch(error => {
+                UserLogin.api().patch('/secUser/' + user.idUser, user).catch(error => {
                 console.log(error)
             })
             })

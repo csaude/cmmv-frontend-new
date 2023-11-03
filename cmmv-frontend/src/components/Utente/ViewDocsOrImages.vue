@@ -14,11 +14,10 @@
   </div>
   </q-page>
 </template>
-<script>
-export default {
-  data () {
-    return {
-      docsOrImages: [
+<script setup>
+import { inject,ref } from 'vue'
+
+const docsOrImages = ref([
         {
           id: 1,
           name: 'Folheto de Convite',
@@ -31,12 +30,5 @@ export default {
           id: 2,
           name: 'Seriado Activista',
         }
-      ]
-    }
-  },
-   methods: {
-   },
-  components: {
-  }
-}
+      ])
 </script>

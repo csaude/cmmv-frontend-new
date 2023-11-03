@@ -19,7 +19,7 @@ const routes = [
   },
   {
     path: '/mobilizerHome/:id',
-    component: () => import('components/CommunityMobilizer/MainPage'),
+    component: () => import('components/CommunityMobilizer/MainPage.vue'),
     children: [
   ]
   },

@@ -1,17 +1,18 @@
 import { Model } from 'pinia-orm'
-import db from 'src/store/localbase'
+//import db from 'src/store/localbase'
 
 export default class VMMCArticle extends Model {
   static entity = 'VMMCArticles'
   static primaryKey = 'id'
   static fields () {
     return {
-      id: this.string(() => uuidv4()),
+      id: this.attr(null),
       seq: this.attr(''),
       text: this.attr('')
     }
   }
 
+  /*
   static localDbAdd (VMMCArticle) {
     return db.newDb().collection('VMMCArticles').add(VMMCArticle)
   }
@@ -39,4 +40,5 @@ export default class VMMCArticle extends Model {
   static localDbDeleteAll () {
     return db.newDb().collection('VMMCArticles').delete()
   }
+  */
 }

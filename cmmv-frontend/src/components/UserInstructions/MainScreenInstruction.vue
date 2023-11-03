@@ -31,28 +31,23 @@
     </q-dialog>
   </div>
 </template>
-<script>
-import { ref } from 'vue'
+<script setup>
+import { ref,onMounted } from 'vue'
 
-export default {
-  setup () {
-    return {
-      dialog: ref(true)
-    }
-  },
-  mounted () {
-    this.checkInstruction()
-  },
-  methods: {
-    checkInstruction () {
-      if (localStorage.getItem('firstInstruction')) {
-        this.dialog = false
+const dialog = ref(true)
+
+
+onMounted(() => {
+ checkInstruction()
+});
+
+const checkInstruction = () => {
+   if (localStorage.getItem('firstInstruction')) {
+       dialog.value = false
         localStorage.setItem('firstInstruction', false)
       } else {
         localStorage.setItem('firstInstruction', true)
       }
-    }
-  }
 }
 </script>
 <style lang="css" scoped>

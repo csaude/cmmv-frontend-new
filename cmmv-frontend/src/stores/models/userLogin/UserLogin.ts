@@ -1,5 +1,5 @@
 import { Model } from 'pinia-orm'
-import db from 'src/store/localbase'
+//import db from 'src/store/localbase'
 
 export class UserLogin extends Model {
   static entity = 'userLogins'
@@ -32,7 +32,7 @@ export class UserLogin extends Model {
       clinic_id: this.attr('')
     }
   }
-
+/*
   static async apiGetAll () {
     return await this.api().get('/secUser')
   }
@@ -64,4 +64,5 @@ export class UserLogin extends Model {
   static localDbDeleteAll () {
     return db.newDb().collection('users').delete()
   }
+  */
 }
