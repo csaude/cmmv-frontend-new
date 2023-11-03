@@ -1,11 +1,11 @@
 import { useRepo } from 'pinia-orm';
 import api from '../apiService/apiService';
 import { nSQL } from 'nano-sql';
-import Clinic from 'src/stores/models/clinic/Clinic';
+import Utente from 'src/stores/models/utente/Utente';
 import { useSwal } from 'src/composables/shared/dialog/dialog';
 import { useSystemUtils } from 'src/composables/shared/systemUtils/systemUtils';
 
-const clinic = useRepo(Clinic);
+const utente = useRepo(Utente);
 
 const { alertSucess, alertError } = useSwal();
 const { isMobile, isOnline } = useSystemUtils();
@@ -42,17 +42,17 @@ export default {
   // WEB
   postWeb(params: string) {
     return api()
-      .post('clinic', params)
+      .post('utente', params)
       .then((resp) => {
-        clinic.save(resp.data);
+        utente.save(resp.data);
       });
   },
   getWeb(offset: number) {
     if (offset >= 0) {
       return api()
-        .get('clinic?offset=' + offset + '&max=100')
+        .get('utente?offset=' + offset + '&max=100')
         .then((resp) => {
-          clinic.save(resp.data);
+          utente.save(resp.data);
           offset = offset + 100;
           if (resp.data.length > 0) {
             this.get(offset);
@@ -65,43 +65,55 @@ export default {
   },
   patchWeb(id: number, params: string) {
     return api()
-      .patch('clinic/' + id, params)
+      .patch('utente/' + id, params)
       .then((resp) => {
-        clinic
+        utente
       .save(resp.data);
       });
   },
   deleteWeb(id: number) {
     return api()
-      .delete('clinic/' + id)
+      .delete('utente/' + id)
       .then(() => {
-        clinic.destroy(id);
+        utente.destroy(id);
       });
   },
-  async getAllClinicsByDistrictId (districtId: number) {
-    await api().get('/clinic/district/' + districtId).then(resp => {
-      this.putMobile(resp.data)
-     }).catch(error => {
-         console.log(error)
-     })
-    },
+
+  async apiFetchByMobilizer(mobilizer:any,offset: number) {
+    let utentesApiList = []
+    await api().get('/utente/communityMobilizer/' + mobilizer).then(resp => {
+           offset = offset + 100
+           utentesApiList = resp.data
+           utentesApiList.forEach(utente => {
+                  // utente.communityMobilizer = mobilizer
+                  if (utente.syncStatus === undefined || utente.syncStatus === null) {
+                      utente.syncStatus = 'S'
+                  }
+                this.putMobile(utente)
+               })
+       //     $q.loading.hide()
+      }).catch(error => {
+      //   $q.loading.hide()
+          console.log(error)
+      }) 
+  },
   // Mobile
   putMobile(params: string) {
-    return nSQL(Clinic
+    return nSQL(Utente
     .entity)
       .query('upsert', params)
       .exec()
       .then((resp) => {
-        clinic.save(resp[0].affectedRows);
+        utente.save(resp[0].affectedRows);
       });
   },
   getMobile() {
-    return nSQL(Clinic
+    return nSQL(Utente
     .entity)
       .query('select')
       .exec()
       .then((rows: any) => {
-        clinic.save(rows);
+        utente.save(rows);
       })
       .catch((error: any) => {
         // alertError('Aconteceu um erro inesperado nesta operação.');
@@ -109,13 +121,13 @@ export default {
       });
   },
   deleteMobile(paramsId: string) {
-    return nSQL(Clinic
+    return nSQL(Utente
     .entity)
       .query('delete')
       .where(['id', '=', paramsId])
       .exec()
       .then(() => {
-        clinic
+        utente
       .destroy(paramsId);
         alertSucess('O Registo foi removido com sucesso');
       })
@@ -124,21 +136,61 @@ export default {
         console.log(error);
       });
   },
+
+
   // Local Storage Pinia
   newInstanceEntity() {
-    return clinic.getModel().$newInstance();
+    return utente.getModel().$newInstance();
   },
   getAllFromStorage() {
-    return clinic.all();
+    return utente.all();
   },
   deleteAllFromStorage() {
-    clinic.flush();
-  },
-  getLocalClinicsByDistrictId(districtId : number) {
-    return clinic.query().with('province').with('district').where('district_id', districtId).get()
+    utente.flush();
   },
 
-  getByClinicId(id : number) {
-    return clinic.query().with('province').with('district').whereId(id).first()
-  }
+  getLocalUtenteById(id:number) {
+    return utente.query().whereId(id).first();
+  },
+  getLocalPendingUtentes() {
+      return utente.query()
+                   .with('clinic.province')
+                   .with('clinic.district.province')
+                   .with('communityMobilizer')
+                   .with('appointments.clinic.province')
+                   .with('appointments.clinic.district.province')
+                   .with('addresses.district')
+                   .where('status', 'PENDENTE')
+                   .orderBy('firstNames')
+                   .get()
+  },
+  getLocalUtentesAssociados() {
+    return utente.query()
+    .with('clinic')
+    .with('clinic')
+    .with('communityMobilizer')
+    .with('appointments')
+    .with('appointments')
+    .with('addresses')
+    .where('status', 'ASSOCIADO')
+    .orderBy('firstNames')
+    .get()
+},
+getLocalUtentesEnviados() {
+  return utente.query()
+  .with('clinic')
+  .with('clinic')
+  .with('communityMobilizer')
+  .with('appointments')
+  .with('appointments')
+  .with('appointments')
+  .with('addresses')
+  .with('addresses')
+  .where('status', 'ENVIADO')
+  .orderBy('firstNames')
+  .get()
+},
+update(utente :any) {
+  utente.save(utente);
+}
 };

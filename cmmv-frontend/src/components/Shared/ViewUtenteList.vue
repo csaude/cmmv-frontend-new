@@ -37,10 +37,10 @@
                           <span class="text-green-9" v-else> {{utente.appointments[0].status}} </span>
                       </q-item-label>
                      <div class="">
-                      <q-icon name="event"/> {{this.displayDate(utente.appointments[0].appointmentDate)}}
+                      <q-icon name="event"/> {{displayDate(utente.appointments[0].appointmentDate)}}
                      </div>
-                      <div class="" v-if="utente.appointments[0].clinic !== null">
-                      <q-icon name="place"/> {{utente.appointments[0].clinic.name}}
+                      <div class="" v-if="clinicLocal(utente.appointments[0].clinic_id) !== null">
+                      <q-icon name="place"/> {{clinicLocal(utente.appointments[0].clinic_id).name}}
                     </div>
                   </q-item-section>
                 </q-item>
@@ -56,47 +56,58 @@
               </q-item>
           </q-list>
           </q-card-section>
+          <q-dialog persistent v-model="showUtenteULinkScreen">
+            <utenteUSLink  />
+      </q-dialog> 
     </q-card>
-    <utente-us-link v-model:showUtenteULinkScreen="show_dialog" v-model:utente="utente" :activeUSForm="activeUSForm" :isOn=isOn />
 </div>
 </template>
-
-<script>
-import { ref } from 'vue'
+<script setup>
+import { ref,onMounted,inject,provide } from 'vue'
 import { useQuasar, QSpinnerIos } from 'quasar'
 // import Appointment from 'src/store/models/appointment/Appointment'
-import Utente from 'src/store/models/utente/Utente'
-import CommunityMobilizer from 'src/store/models/mobilizer/CommunityMobilizer'
- import db from 'src/store/localbase'
-import Appointment from '../../store/models/appointment/Appointment'
+import Utente from 'src/stores/models/utente/Utente'
+import CommunityMobilizer from '../../stores/models/mobilizer/CommunityMobilizer'
+ import db from '../../stores/localbase'
+ import Appointment from '../../stores/models/appointment/Appointment'
 import moment from 'moment'
 import isOnline from 'is-online'
-export default {
-    props: ['indexEdit', 'utentes', 'utenteEdit', 'name', 'value', 'showUtenteULinkScreenProp', 'showUtenteRegistrationScreen'],
-    emits: ['update:showUtenteULinkScreenProp', 'update:utentes', 'update:indexEdit', 'update:utenteEdit', 'update:showUtenteRegistrationScreen', 'update:isOn'],
-    setup () {
-       const $q = useQuasar()
-       let timer
-        let isOn
-      return {
-        show_dialog: ref(false),
-        utente: {},
-        $q,
-        timer,
-          isOn,
-           isOnline,
-        confirm: ref(false)
-      }
-    },
-    methods: {
-      finalize (reset) {
-        this.timer = setTimeout(() => {
+import utenteUSLink from 'components/Utente/SearchSanitaryUnit.vue';
+import { useLoading } from 'src/composables/shared/loading/loading';
+import { useSwal } from 'src/composables/shared/dialog/dialog';
+import clinicService from '../../services/api/clinic/clinicService'
+import communityMobilizerService from '../../services/api/mobilizer/CommunityMobilizerService'
+import utenteService from 'src/services/api/utente/UtenteService'
+
+const show_dialog =ref(false)
+
+const showUtenteULinkScreen = inject('showUtenteULinkScreen')
+const showUtenteRegistrationScreen = inject('showUtenteRegistrationScreen')
+const indexEdit = inject('indexEdit')
+const utenteToEdit = inject('utenteToEdit')
+
+
+const props = defineProps([
+  'utentes'
+]);
+
+const { closeLoading, showloading } = useLoading();
+const utente = ref({})
+const timer = ref();
+const confirm = ref(false);
+const isOn = ref();
+const $q = useQuasar();
+
+
+const finalize = (reset) => {
+timer.value = setTimeout(() => {
           reset()
         }, 100)
-      },
-      onLeft ({ reset }, utenteOld) {
-        utenteOld.age = this.idadeCalculator(utenteOld.birthDate)
-        this.$q.dialog({
+}
+
+ const onLeft = ({ reset }, utenteOld) => {
+        utenteOld.age = idadeCalculator(utenteOld.birthDate)
+         $q.dialog({
               title: 'Confirmação',
               message: 'Pretende editar os dados do Utente?',
               ok: {
@@ -111,21 +122,22 @@ export default {
               },
               persistent: true
           }).onOk(() => {
-                this.$emit('update:utenteEdit', utenteOld)
-                this.$emit('update:indexEdit', 0)
-                this.$emit('update:showUtenteRegistrationScreen', true)
+            showUtenteRegistrationScreen.value = true
+            indexEdit.value = 0
+            utenteToEdit.value = utenteOld
           }).onCancel(() => {
               // console.log('>>>> Cancel')
-               this.finalize(reset)
+               finalize(reset)
           }).onDismiss(() => {
             // this.finalize(reset)
               // console.log('I am triggered on both OK and Cancel')
           })
         // native Javascript event
         // console.log(evt)
-      },
-      onBottom ({ reset }, utenteOld) {
-        this.$q.dialog({
+      }
+
+ const onBottom = ({ reset }, utenteOld) => {
+     $q.dialog({
               title: 'Confirmação',
               message: 'Pretende apagar os dados do Utente?',
               ok: {
@@ -140,23 +152,26 @@ export default {
               },
               persistent: true
           }).onOk(() => {
-               db.newDb().collection('utentes').doc({ id: utenteOld.id }).delete()
-               Utente.delete(utenteOld.id)
-                this.$emit('update:utente', utenteOld)
+              // db.newDb().collection('utentes').doc({ id: utenteOld.id }).delete()
+              // Utente.delete(utenteOld.id)
+              //  $emit('update:utente', utenteOld)
             //   this.finalize(reset)
+            utenteService.deleteMobile(utenteOld.id)
           }).onCancel(() => {
               // console.log('>>>> Cancel')
-               this.finalize(reset)
+               finalize(reset)
           }).onDismiss(() => {
             // this.finalize(reset)
               // console.log('I am triggered on both OK and Cancel')
           })
         // native Javascript event
         // console.log(evt)
-      },
-      async onRight ({ reset }, utente) {
-        if (utente.syncStatus === 'S') {
-        this.$q.dialog({
+      }
+
+
+const onRight = ({ reset }, utente) => {
+      if (utente.syncStatus === 'S') {
+       $q.dialog({
               title: 'Informação',
               message: 'Não Pode Editar a consulta uma vez que esta já foi sincronizada',
               ok: {
@@ -166,16 +181,13 @@ export default {
               },
               persistent: true
           }).onOk(() => {
-              this.finalize(reset)
+            finalize(reset)
           })
         } else {
-         this.$q.loading.show({
-          spinner: QSpinnerIos,
-          message: 'Por favor, aguarde...'
-         })
+           showloading();
          utente.appointments = []
          utente.status = 'ASSOCIADO'
-         utente.communityMobilizer = CommunityMobilizer.find(localStorage.getItem('id_mobilizer'))
+         utente.communityMobilizer = communityMobilizerService.getMobilizerById(localStorage.getItem('id_mobilizer'))
          utente.communityMobilizer_id = Number(localStorage.getItem('id_mobilizer'))
        /*  await Utente.api().patch('/utente/' + utente.id, utente).then(resp => {
          this.$emit('update:utente', utente)
@@ -194,7 +206,7 @@ export default {
           this.$q.loading.hide()
           console.log('Erro no code ' + error)
         }) */
-        const appointment = Appointment.query().where('utente_id', utente.id).get()
+       // const appointment = Appointment.query().where('utente_id', utente.id).get()
        // const appointmentId = appointment.id
       //   console.log(db.newDb().collection('appointments'))
            db.newDb().collection('appointments').doc({ id: appointment[0].id }).delete()
@@ -209,59 +221,71 @@ Utente.update({
       })
       Appointment.delete(appointment[0].id)
        //   this.finalize(reset)
-          this.$q.loading.hide()
-          this.$emit('update:utente', utente)
+          closeLoading()
+          $emit('update:utente', utente)
       }
-      },
-      displayDate (newDate) {
-      //  moment(date).format('YYYY/MM/DD'))
-        return moment(newDate).format('DD-MM-YYYY')
-      },
-     async activeUSForm (open, utente) {
-        if (open) {
-          this.isOnlineChecker()
+      }
+
+const displayDate = (newDate) => {
+   return moment(newDate).format('DD-MM-YYYY')
+}
+
+const activeUSForm = (open, utenteParam) => {
+     if (open) {
+          isOnlineChecker()
         }
-        Utente.update(utente)
-        this.show_dialog = open
-        this.utente = utente
-       this.$emit('update:showUtenteULinkScreenProp', open)
-        this.$emit('update:utente', utente)
-      },
-      idadeCalculator (birthDate) {
-            if (moment(birthDate).isValid()) {
+      //  Utente.update(utente)
+        show_dialog.value = open
+        utente.value = utenteParam
+        showUtenteULinkScreen.value = true
+    //  $emit('update:showUtenteULinkScreenProp', open)
+   //    $emit('update:utente', utente)
+}
+
+
+const idadeCalculator = (birthDate) => {
+     if (moment(birthDate).isValid()) {
                const utentBirthDate = moment(birthDate)
                const todayDate = moment(new Date())
                const idade = todayDate.diff(utentBirthDate, 'years')
                return idade
             }
-      },
-       async isOnlineChecker () {
-          this.$q.loading.show({
-         spinner: QSpinnerIos,
-         message: 'Por favor, aguarde...'
-    })
-      await isOnline().then(resp => {
+}
+
+const clinicLocal = (id) => {
+ return  clinicService.getByClinicId(id)
+}
+
+const isOnlineChecker = async () => {
+  showloading()
+    await isOnline().then(resp => {
         if (resp === true) {
-         this.isOn = true
-          this.$q.loading.hide()
+         isOn.value = true
+        closeLoading()
         } else {
-           this.isOn = false
-          this.$q.loading.hide()
+           isOn.value = false
+              closeLoading()
         }
       }).catch(error => {
-        this.$q.loading.hide()
+            closeLoading()
         console.log(error)
       })
-    }
-    },
-     components: {
-      'utente-us-link': require('components/Utente/SearchSanitaryUnit.vue').default
-  },
-   mounted () {
-      this.isOnlineChecker()
- }
 }
+onMounted(() => {
+  showloading();
+  isOnlineChecker();
+});
+
+
+provide('showUtenteULinkScreen', showUtenteULinkScreen);
+provide('showUtenteRegistrationScreen', showUtenteRegistrationScreen);
+provide('utente', utente);
+provide('isOn', isOn);
+provide('utenteToEdit', utenteToEdit);
 </script>
+
+
+
 <style scoped>
 .span-pendente {
 font-size: 15x;

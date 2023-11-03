@@ -6,9 +6,8 @@ import { LocalStorage } from 'quasar';
 const { website } = useSystemUtils();
 
 const instance = axios.create({
-  baseURL: 'http://dev.fgh.org.mz:4110/api'
+  baseURL: 'http://localhost:8882/api'
 });
-let numTries = 0;
 // Request interceptor for API calls
 instance.interceptors.request.use(
   (request) => {
@@ -16,11 +15,11 @@ instance.interceptors.request.use(
     request.headers = {
       Accept: 'application/json',
     };
-    if (config.url === '/province' || config.url === '/district' || config.url === '/clinic')  {
+    if (request.url === '/province' || request.url === '/district' || request.url === '/clinic')  {
       delete request.headers.Authorization;
-    } else if (userloged != null && userloged != 'null') {
+    } else if (localStorage.getItem('id_token') != null) {
       const localuser = UsersService.getUserByUserName(String(userloged));
-      request.headers['X-Auth-Token'] = ['', localuser.access_token].join(' ');
+      request.headers['X-Auth-Token'] = ['',  localStorage.getItem('id_token')].join(' ');
     } else {
       delete request.headers.Authorization;
     }

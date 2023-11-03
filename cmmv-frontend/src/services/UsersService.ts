@@ -1,9 +1,16 @@
-import { Notify } from 'quasar'
-import { UserLogin } from 'src/store/models/userLogin/UserLogin'
+import { Notify } from 'quasar';
+import { UserLogin } from 'src/stores/models/userLogin/UserLogin'
+import api from 'src/services/api/apiService/apiService';
+import { useRepo } from 'pinia-orm';
+import { useSystemUtils } from 'src/composables/shared/systemUtils/systemUtils';
+
+
+const userLogin = useRepo(UserLogin);
+
 
 export default {
   logout () {
-    return UserLogin.api().get('logout')
+    return api().get('logout')
       .catch((error) => {
         if (error.response) {
           console.log(JSON.stringify(error.response))
@@ -16,7 +23,7 @@ export default {
       })
   },
   fetchUsers () {
-    return UserLogin.api().get('secUser')
+    return api().get('secUser')
       .catch((error) => {
         if (error.response) {
           console.log(error.response)
@@ -28,8 +35,8 @@ export default {
         }
       })
   },
-  signup (params) {
-    return UserLogin.api().post('user/signup', params)
+  signup (params: any) {
+    return api().post('user/signup', params)
       .catch((error) => {
         if (error.response) {
           console.log(error.response)
@@ -41,8 +48,8 @@ export default {
         }
       })
   },
-  login (params) {
-    return UserLogin.api().post('/login', params)
+  login (params: any) {
+    return api().post('/login', params)
       .catch((error) => {
         if (error.response) {
           Notify.create({
@@ -75,8 +82,8 @@ export default {
         }
       })
   },
-  updateUser (params) {
-    return UserLogin.api().put('secUser/' + params.id, params)
+  updateUser (params:any) {
+    return api().put('secUser/' + params.id, params)
       .catch((error) => {
         if (error.response) {
           console.log(error.response)
@@ -87,10 +94,10 @@ export default {
         }
       })
   },
-  getUser (params) {
-    return UserLogin.api().get('secUser/' + params.id).then(resp => {
-        this.submitting = false
-      console.log(resp.response)
+  getUser (params:any) {
+    return api().get('secUser/' + params.id).then(resp => {
+       // this.submitting = false
+      console.log(resp)
       })
       .catch((error) => {
         if (error.response) {
@@ -102,8 +109,8 @@ export default {
         }
       })
   },
-  deleteUser (id) {
-    return UserLogin.api().delete('user/' + id)
+  deleteUser (id:number) {
+    return api().delete('user/' + id)
       .catch((error) => {
         if (error.response) {
           console.log(error.response)
@@ -113,5 +120,9 @@ export default {
           console.log('Error', error.message)
         }
       })
-  }
+  },
+
+  getUserByUserName(username: string) {
+    return userLogin.query().where('username', username).first();
+  },
 }

@@ -34,29 +34,25 @@
   </div>
 
 </template>
-<script>
-import { ref } from 'vue'
+<script setup>
+import { ref, onMounted } from 'vue'
 
-export default {
-  setup () {
-    return {
-      dialog: ref(true),
-      dialog2: ref(true)
-    }
-  },
-  mounted () {
-    this.checkInstruction()
-  },
-  methods: {
-    checkInstruction () {
-      if (localStorage.getItem('SeventhInstruction')) {
-        this.dialog2 = false
+const dialog = ref(true)
+const dialog2 = ref(true)
+
+
+
+onMounted(() => {
+ checkInstruction()
+});
+
+const checkInstruction = () => {
+   if (localStorage.getItem('SeventhInstruction')) {
+       dialog2.value = false
         localStorage.setItem('SeventhInstruction', false)
       } else {
         localStorage.setItem('SeventhInstruction', true)
       }
-    }
-  }
 }
 </script>
 <style lang="css" scoped>

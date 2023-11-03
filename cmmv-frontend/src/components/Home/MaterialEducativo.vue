@@ -5,9 +5,9 @@
         leave-active-class="animated zoomOut absolute-top"
         >
      <q-card key="material" class="my-card full-width q-pt-lg">
-      <q-list bordered separator v-if="this.infoDocsOrImages.length > 0">
-       <view-docs-or-images
-          v-for="docs in this.infoDocsOrImages"
+      <q-list bordered separator v-if="infoDocsOrImages.length > 0">
+       <viewDocsOrImages
+          v-for="docs in infoDocsOrImages"
           :key="docs.id"
           :file="docs"
           :id="docs.id"
@@ -24,10 +24,35 @@
       </q-card>
 </transition-group>
 </template>
+<script setup>
+import { onMounted,computed } from 'vue'
+import InfoDocsOrImages from '../../stores/models/dorcOrImages/InfoDocsOrImages'
+import infoDocsOrImagesSerice from '../../services/api/dorcOrImages/infoDocsOrImagesSerice'
+import { useQuasar, QSpinnerIos } from 'quasar'
+import { useLoading } from 'src/composables/shared/loading/loading';
+import viewDocsOrImages from 'components/Home/ViewDocsOrImages.vue';
+
+const { closeLoading, showloading } = useLoading();
+
+
+const infoDocsOrImages =  computed(() => {
+  return infoDocsOrImagesSerice.getAllForMobilizer();
+});
+
+onMounted(() => {
+  showloading();
+ getInfoDocsOrImages();
+});
+
+const getInfoDocsOrImages = async () => {
+ await infoDocsOrImagesSerice.get(0)
+ closeLoading();
+}
+</script>
+
 
 <script>
-import InfoDocsOrImages from '../../store/models/dorcOrImages/InfoDocsOrImages'
-import { useQuasar, QSpinnerIos } from 'quasar'
+
 export default {
     props: ['docsOrImages', 'showDownload'],
     data () {
@@ -35,34 +60,6 @@ export default {
         return {
         $q
         }
-    },
-    computed: {
-        infoDocsOrImages () {
-            return InfoDocsOrImages.query().where('forMobilizer', true).get()
-        }
-    },
-    mounted () {
-        this.$q.loading.show({
-          spinner: QSpinnerIos,
-          message: 'Por favor, aguarde...'
-     })
-        const offset = 0
-        this.getInfoDocsOrImages(offset)
-    },
-   methods: {
-       getInfoDocsOrImages (offset) {
-            InfoDocsOrImages.api().get('/infoDocsOrImages').then(resp => {
-              //  offset = offset + 100
-                console.log(resp.response.data)
-                 this.$q.loading.hide()
-            }).catch(error => {
-                 this.$q.loading.hide()
-                console.log(error)
-            })
-        }
-   },
-     components: {
-    'view-docs-or-images': require('components/Home/ViewDocsOrImages.vue').default
-  }
+    }
 }
 </script>

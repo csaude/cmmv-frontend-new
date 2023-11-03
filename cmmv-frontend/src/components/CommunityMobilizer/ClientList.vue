@@ -41,23 +41,14 @@
   </q-page>
 </template>
 
-<script>
-export default {
-    components: {
-     'utentes-view-list': require('components/Shared/ViewUtenteList.vue').default
-  },
-  setup () {
-    return {
-       tab: ref('associados'),
-       leftDrawerOpen: ref(false),
-       showUtenteRegistrationScreen: ref(false),
-       showUtenteULinkScreen: ref(false)
-    }
-  },
-  mounted() {
-     
-  },
-  methods: {
-  }
-}
+<script setup>
+import { ref } from 'vue';
+import utentesViewList from 'components/Shared/ViewUtenteList.vue';
+
+
+const tab = ref('associados')
+const leftDrawerOpen = ref(false)
+const showUtenteRegistrationScreen = ref(false)
+const showUtenteULinkScreen = ref(false)
+
 </script>

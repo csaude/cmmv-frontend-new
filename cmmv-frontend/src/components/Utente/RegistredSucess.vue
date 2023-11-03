@@ -23,12 +23,10 @@
         </div>
   </q-page>
 </template>
-<script>
-export default {
-    props: ['utente'],
-  components: {
-    pageHeader: require('components/Utente/UtenteRegistrationHeader.vue').default,
-    buttone: require('components/Shared/Button.vue').default
-  }
-}
+<script setup>
+import pageHeader from 'components/Utente/UtenteRegistrationHeader.vue'
+import buttone from 'components/Shared/Button.vue'
+import { ref , inject } from 'vue'
+
+const utente = inject('utente')
 </script>

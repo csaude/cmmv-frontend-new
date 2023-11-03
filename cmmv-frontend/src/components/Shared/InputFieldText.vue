@@ -10,6 +10,6 @@
 </template>
 <script>
 export default {
-    props: ['description', 'ref']
+    props: ['description', '']
 }
 </script>

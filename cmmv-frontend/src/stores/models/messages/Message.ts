@@ -1,6 +1,6 @@
 import { Model } from 'pinia-orm'
 import Utente from '../utente/Utente'
-import db from 'src/store/localbase'
+// import db from 'src/store/localbase'
 
 export default class Message extends Model {
   static entity = 'messages'
@@ -18,6 +18,7 @@ export default class Message extends Model {
     }
   }
 
+  /*
   static localDbAdd (message) {
     return db.newDb().collection('messages').add(message)
   }
@@ -45,4 +46,5 @@ export default class Message extends Model {
   static localDbDeleteAll () {
     return db.newDb().collection('messages').delete()
   }
+  */
 }

@@ -10,25 +10,30 @@
        </q-item-section>
       </q-item>
 </template>
-<script>
-import InfoDocsOrImages from '../../store/models/dorcOrImages/InfoDocsOrImages'
+<script setup>
+import infoDocsOrImagesSerice from '../../services/api/dorcOrImages/infoDocsOrImagesSerice';
 import { useQuasar, QSpinnerIos } from 'quasar'
-export default {
-    props: ['file', 'id', 'showDownload'],
-      setup () {
-         const $q = useQuasar()
-        return {
-        $q
-        }
-    },
-    methods: {
-      forceFileDownload (materialEducativo, title, $q) {
+import { useLoading } from 'src/composables/shared/loading/loading';
+import { useSwal } from 'src/composables/shared/dialog/dialog';
+
+
+const props = defineProps([
+'file', 'id', 'showDownload'
+]);
+
+
+const { closeLoading, showloading } = useLoading();
+const { alertSucess, alertError, alertInfo, alertWarningAction } = useSwal();
+const $q = useQuasar();
+
+//props: ['file', 'id', 'showDownload']
+const forceFileDownload = (materialEducativo, title, $q) => {
  if (typeof cordova !== 'undefined') {
   //   var blob = new Blob(materialEducativo.blop)
   //  const bytes = new Uint8Array(materialEducativo.blop)
   var UTF8_STR = new Uint8Array(materialEducativo.blop)
     var BINARY_ARR = UTF8_STR.buffer
-    var titleFile = this.removeAccentsSpacesAndParenthesis(title)
+    var titleFile = removeAccentsSpacesAndParenthesis(title)
     console.log('result' + titleFile)
      saveBlob2File(titleFile, BINARY_ARR)
      function saveBlob2File (fileName, blob) {
@@ -80,9 +85,6 @@ export default {
             error: function (e) {
                 console.log('file system open3333366: ' + e + documentURL)
             },
-            success: function () {
-
-            }
         })
     }
  } else {
@@ -94,27 +96,27 @@ export default {
         document.body.appendChild(link)
         link.click()
  }
-    },
-     getInfoDocsOrImagesById (id) {
-         this.$q.loading.show({
-          spinner: QSpinnerIos,
-          message: 'Por favor, aguarde...'
-     })
-            InfoDocsOrImages.api().get('/infoDocsOrImages/' + id).then(resp => {
+
+}
+
+const  getInfoDocsOrImagesById = (id) => {
+     showloading()
+           infoDocsOrImagesSerice.apiFetchById(id).then(resp => {
               //  offset = offset + 100
-                console.log(resp.response.data)
-                this.forceFileDownload(resp.response.data, resp.response.data.title + '.pdf', this.$q)
-               //  this.$q.loading.hide()
+                console.log(resp.data)
+                forceFileDownload(resp.data, resp.data.title + '.pdf', $q)
+            closeLoading()
             }).catch(error => {
-                 this.$q.loading.hide()
+                closeLoading()
                 console.log(error)
             })
-        },
-     removeAccentsSpacesAndParenthesis (value) {
+}
+
+const removeAccentsSpacesAndParenthesis = (value) => {
       var val = value.replace(/\s/g, '').replace(/\(|\)/g, '')
        console.log('val11' + val)
          return val
 }
-  }
-}
+//    props: [],
 </script>
+

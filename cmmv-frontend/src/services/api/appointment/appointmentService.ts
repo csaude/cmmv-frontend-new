@@ -42,7 +42,7 @@ export default {
   // WEB
   postWeb(params: string) {
     return api()
-      .post('address', params)
+      .post('appointment', params)
       .then((resp) => {
         appointment.save(resp.data);
       });
@@ -50,7 +50,7 @@ export default {
   getWeb(offset: number) {
     if (offset >= 0) {
       return api()
-        .get('address?offset=' + offset + '&max=100')
+        .get('appointment?offset=' + offset + '&max=100')
         .then((resp) => {
           appointment.save(resp.data);
           offset = offset + 100;
@@ -65,7 +65,7 @@ export default {
   },
   patchWeb(uuid: string, params: string) {
     return api()
-      .patch('address/' + uuid, params)
+      .patch('appointment/' + uuid, params)
       .then((resp) => {
         appointment
       .save(resp.data);
@@ -73,14 +73,14 @@ export default {
   },
   deleteWeb(uuid: string) {
     return api()
-      .delete('Address/' + uuid)
+      .delete('appointment/' + uuid)
       .then(() => {
         appointment.destroy(uuid);
       });
   },
   // Mobile
   putMobile(params: string) {
-    return nSQL(Address
+    return nSQL(Appointment
     .entity)
       .query('upsert', params)
       .exec()
@@ -89,7 +89,7 @@ export default {
       });
   },
   getMobile() {
-    return nSQL(Address
+    return nSQL(Appointment
     .entity)
       .query('select')
       .exec()
@@ -102,13 +102,13 @@ export default {
       });
   },
   deleteMobile(paramsId: string) {
-    return nSQL(Address
+    return nSQL(Appointment
     .entity)
       .query('delete')
       .where(['id', '=', paramsId])
       .exec()
       .then(() => {
-        address.destroy(paramsId);
+        appointment.destroy(paramsId);
         alertSucess('O Registo foi removido com sucesso');
       })
       .catch((error: any) => {
@@ -118,12 +118,12 @@ export default {
   },
   // Local Storage Pinia
   newInstanceEntity() {
-    return address.getModel().$newInstance();
+    return appointment.getModel().$newInstance();
   },
   getAllFromStorage() {
-    return address.all();
+    return appointment.all();
   },
   deleteAllFromStorage() {
-    address.flush();
+    appointment.flush();
   },
 };

@@ -1,7 +1,7 @@
 import { Model } from 'pinia-orm'
 import Clinic from '../clinic/Clinic'
 import Utente from '../utente/Utente'
-import db from 'src/store/localbase'
+// import db from 'src/store/localbase'
 import { v4 as uuidv4 } from 'uuid'
 
 export default class Appointment extends Model {
@@ -9,7 +9,7 @@ export default class Appointment extends Model {
   static primaryKey = 'id'
   static fields () {
     return {
-      id: this.string(() => uuidv4()),
+      id: this.attr(null),
       appointmentDate: this.attr(''),
       time: this.attr(''),
       hasHappened: this.attr(false),
@@ -26,6 +26,7 @@ export default class Appointment extends Model {
     }
   }
 
+  /*
   static localDbAdd (appointment) {
     return db.newDb().collection('appointments').add(appointment)
   }
@@ -53,4 +54,5 @@ export default class Appointment extends Model {
   static localDbDeleteAll () {
     return db.newDb().collection('appointments').delete()
   }
+  */
 }

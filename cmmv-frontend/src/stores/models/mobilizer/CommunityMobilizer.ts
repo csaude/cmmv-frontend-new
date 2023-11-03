@@ -2,7 +2,7 @@ import { Model } from 'pinia-orm'
 import Utente from '../utente/Utente'
 import InfoDocsOrImages from '../dorcOrImages/InfoDocsOrImages'
 import District from '../district/District'
-import db from 'src/store/localbase'
+// import db from 'src/store/localbase'
 // import { MobilizerLogin } from '../userLogin/UserLoginHierarchy'
 
 export default class CommunityMobilizer extends Model {
@@ -32,6 +32,7 @@ export default class CommunityMobilizer extends Model {
     }
   }
 
+  /*
   static async apiGetAll () {
     return await this.api().get('/communityMobilizer')
   }
@@ -75,4 +76,5 @@ export default class CommunityMobilizer extends Model {
   static localDbDeleteAll () {
     return db.newDb().collection('communityMobilizers').delete()
   }
+  */
 }

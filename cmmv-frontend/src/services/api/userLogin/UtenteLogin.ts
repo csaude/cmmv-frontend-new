@@ -1,3 +1,3 @@
-import Utente from '../utente/Utente'
+import Utente from '../utente/UtenteService'
 import { UserLogin } from './UserLoginHierarchy'
 

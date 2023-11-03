@@ -1,11 +1,11 @@
 import { Model } from 'pinia-orm'
-import Country from 'src/store/models/country/Country'
+import Country from '../country/Country'
 import District from '../district/District'
-import db from 'src/store/localbase'
+//import db from 'src/store/localbase'
 
 export default class Province extends Model {
   static entity = 'provinces'
-
+  static primaryKey = 'id';
   static fields () {
     return {
       id: this.attr(null),
@@ -18,7 +18,10 @@ export default class Province extends Model {
 
     }
   }
-
+  static piniaOptions = {
+    persist: true,
+  };
+  /*
   static async apiFetchById (id) {
     return await this.api().get(`/province/${id}`)
   }
@@ -54,4 +57,5 @@ export default class Province extends Model {
   static localDbDeleteAll () {
     return db.newDb().collection('provinces').delete()
   }
+  */
 }
