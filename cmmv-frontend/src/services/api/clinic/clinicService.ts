@@ -67,8 +67,7 @@ export default {
     return api()
       .patch('clinic/' + id, params)
       .then((resp) => {
-        clinic
-      .save(resp.data);
+        clinic.save(resp.data);
       });
   },
   deleteWeb(id: number) {
@@ -78,17 +77,19 @@ export default {
         clinic.destroy(id);
       });
   },
-  async getAllClinicsByDistrictId (districtId: number) {
-    await api().get('/clinic/district/' + districtId).then(resp => {
-      this.putMobile(resp.data)
-     }).catch(error => {
-         console.log(error)
-     })
-    },
+  async getAllClinicsByDistrictId(districtId: number) {
+    await api()
+      .get('/clinic/district/' + districtId)
+      .then((resp) => {
+        this.putMobile(resp.data);
+      })
+      .catch((error) => {
+        console.log(error);
+      });
+  },
   // Mobile
   putMobile(params: string) {
-    return nSQL(Clinic
-    .entity)
+    return nSQL(Clinic.entity)
       .query('upsert', params)
       .exec()
       .then((resp) => {
@@ -96,8 +97,7 @@ export default {
       });
   },
   getMobile() {
-    return nSQL(Clinic
-    .entity)
+    return nSQL(Clinic.entity)
       .query('select')
       .exec()
       .then((rows: any) => {
@@ -109,14 +109,12 @@ export default {
       });
   },
   deleteMobile(paramsId: string) {
-    return nSQL(Clinic
-    .entity)
+    return nSQL(Clinic.entity)
       .query('delete')
       .where(['id', '=', paramsId])
       .exec()
       .then(() => {
-        clinic
-      .destroy(paramsId);
+        clinic.destroy(paramsId);
         alertSucess('O Registo foi removido com sucesso');
       })
       .catch((error: any) => {
@@ -134,11 +132,20 @@ export default {
   deleteAllFromStorage() {
     clinic.flush();
   },
-  getLocalClinicsByDistrictId(districtId : number) {
-    return clinic.query().with('province').with('district').where('district_id', districtId).get()
+  getLocalClinicsByDistrictId(districtId: number) {
+    return clinic
+      .query()
+      .with('province')
+      .with('district')
+      .where('district_id', districtId)
+      .get();
   },
 
-  getByClinicId(id : number) {
-    return clinic.query().with('province').with('district').whereId(id).first()
-  }
+  getByClinicId(id: number) {
+    return clinic.query().with('province').with('district').whereId(id).first();
+  },
+
+  getClinicByUse(id_clinicUser: any) {
+    return clinic.query().find(id_clinicUser);
+  },
 };

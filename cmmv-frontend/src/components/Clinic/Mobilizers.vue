@@ -1,62 +1,77 @@
 <template>
-<div class="row q-mb-md">
-                <combo-field
-                    class="col"
-                    v-model="province"
-                    :options="provinces"
-                    transition-show="flip-up"
-                    transition-hide="flip-down"
-                    ref="province"
-                    option-value="id"
-                    option-label="description"
-                    :rules="[ val => ( val != null ) || ' Por favor indique a província']"
-                    lazy-rules
-                    label="Província" />
-                <combo-field
-                    class="col q-ml-md"
-                     transition-show="flip-up"
-                    transition-hide="flip-down"
-                    v-model="district"
-                    :options="districts"
-                    ref="district"
-                    option-value="id"
-                    option-label="description"
-                    :rules="[ val => ( val != null) || ' Por favor indique a Distrito']"
-                    lazy-rules
-                    label="Distrito" />
-            </div>
-<div class="q-pt-xl">
-        <q-table
-        title="Mobilizadores"
-        :rows="mobilizers"
-        :columns="columns"
-        row-key="id"
-        :filter="filter"
-        binary-state-sort
+  <div class="row q-mb-md">
+    <combo-field
+      class="col"
+      v-model="province"
+      :options="provinces"
+      transition-show="flip-up"
+      transition-hide="flip-down"
+      ref="province"
+      option-value="id"
+      option-label="description"
+      :rules="[(val) => val != null || ' Por favor indique a província']"
+      lazy-rules
+      label="Província"
+    />
+    <combo-field
+      class="col q-ml-md"
+      transition-show="flip-up"
+      transition-hide="flip-down"
+      v-model="district"
+      :options="districts"
+      ref="district"
+      option-value="id"
+      option-label="description"
+      :rules="[(val) => val != null || ' Por favor indique a Distrito']"
+      lazy-rules
+      label="Distrito"
+    />
+  </div>
+  <div class="q-pt-xl">
+    <q-table
+      title="Mobilizadores"
+      :rows="mobilizers"
+      :columns="columns"
+      row-key="id"
+      :filter="filter"
+      binary-state-sort
+    >
+      <template v-slot:top-right>
+        <q-input
+          outlined
+          dense
+          debounce="300"
+          v-model="filter"
+          placeholder="Pesquisa"
         >
-        <template v-slot:top-right>
-            <q-input outlined dense debounce="300" v-model="filter" placeholder="Pesquisa">
-            <template v-slot:append>
-                <q-icon name="search" />
-            </template>
-            </q-input>
-        </template>
-        <template v-slot:body="props">
-          <q-tr :props="props">
-            <q-td key="firstNames" :props="props">
-              {{ props.row.firstNames }}
-            </q-td>
-            <q-td key="lastNames" :props="props">
-              <div class="text-pre-wrap">{{ props.row.lastNames}}</div>
-            </q-td>
-             <q-td key="cellNumber" :props="props">
-              <div class="text-pre-wrap">{{ props.row.cellNumber}}</div>
-            </q-td>
-            <q-td key="actions" :props="props">
-             <div class="q-gutter-sm">
-              <q-btn round icon="edit" color="orange" size=sm no-caps @click.stop="editMobilizer(props.row)">
+          <template v-slot:append>
+            <q-icon name="search" />
+          </template>
+        </q-input>
+      </template>
+      <template v-slot:body="props">
+        <q-tr :props="props">
+          <q-td key="firstNames" :props="props">
+            {{ props.row.firstNames }}
+          </q-td>
+          <q-td key="lastNames" :props="props">
+            <div class="text-pre-wrap">{{ props.row.lastNames }}</div>
+          </q-td>
+          <q-td key="cellNumber" :props="props">
+            <div class="text-pre-wrap">{{ props.row.cellNumber }}</div>
+          </q-td>
+          <q-td key="actions" :props="props">
+            <div class="q-gutter-sm">
+              <q-btn
+                round
+                icon="edit"
+                color="orange"
+                size="sm"
+                no-caps
+                @click.stop="editMobilizer(props.row)"
+              >
                 <q-tooltip class="bg-grey-5">Editar</q-tooltip>
-                </q-btn>
+              </q-btn>
               <!--q-btn round glossy icon="delete_forever" color="red" size=sm no-caps>
                 <q-tooltip content-class="bg-red text-white shadow-4"
                           :offset="[10, 10]"
@@ -64,33 +79,42 @@
                           transition-hide="rotate">
                 </q-tooltip>
                 </q-btn-->
-             </div>
-            </q-td>
-          </q-tr>
-        </template>
-        </q-table>
-        <div class="absolute-bottom">
-          <q-page-sticky position="bottom-right" :offset="[18, 18]">
-            <q-btn size="xl" fab icon="add" @click="addMobilizer" no-cap color="primary" />
-          </q-page-sticky>
-        </div>
-          <q-dialog persistent v-model="showMobilizerRegistrationScreen">
-          <addMobilizer
-            :selectedMobilizer="mobilizer"
-             :editMode=editMode
-            @close="showMobilizerRegistrationScreen = false" />
-      </q-dialog>
+            </div>
+          </q-td>
+        </q-tr>
+      </template>
+    </q-table>
+    <div class="absolute-bottom">
+      <q-page-sticky position="bottom-right" :offset="[18, 18]">
+        <q-btn
+          size="xl"
+          fab
+          icon="add"
+          @click="addMobilizer"
+          no-cap
+          color="primary"
+        />
+      </q-page-sticky>
     </div>
+    <q-dialog persistent v-model="showMobilizerRegistrationScreen">
+      <addMobilizer
+        :selectedMobilizer="mobilizer"
+        :editMode="editMode"
+        @close="showMobilizerRegistrationScreen = false"
+      />
+    </q-dialog>
+  </div>
 </template>
 
-<script>
-import CommunityMobilizer from '../../store/models/mobilizer/CommunityMobilizer'
+<script setup>
+import CommunityMobilizer from '../../stores/models/mobilizer/CommunityMobilizer'
 // import { MobilizerLogin } from '../../store/models/userLogin/MobilizerLogin'
 import Province from 'src/store/models/province/Province'
 import District from 'src/store/models/district/District'
 import { QSpinnerIos } from 'quasar'
 import { ref } from 'vue'
-export default {
+
+
    props: ['backToDashBoard'],
     data () {
       const filter = ref('')
@@ -191,12 +215,11 @@ export default {
          addMobilizer: require('components/Clinic/AddMobilizer.vue').default,
            'combo-field': require('components/Shared/ComboField.vue').default
     }
-
 }
 </script>
 
 <style>
-    .fild-radius {
-        border-radius: 5px;
-    }
+.fild-radius {
+  border-radius: 5px;
+}
 </style>
