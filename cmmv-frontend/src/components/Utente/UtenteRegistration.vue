@@ -395,7 +395,7 @@ const validateUtente = () => {
   moradaRef.value.validate();
   bairroRef.value.validate();
   ageRef.value.validate();
-
+  districtRef.value.validate();
   if (
     !nomeRef.value.hasError &&
     !apelidoRef.value.hasError &&
@@ -432,8 +432,10 @@ console.log(dateOfBirth.value)
   utente.value.registerDate = new Date()
   console.log(utente.value.birthDate)
 
-  utente.value.communityMobilizer = mobilizer.value
+ // utente.value.communityMobilizer = mobilizer.value
   utente.value.communityMobilizer_id = mobilizer.value.id
+  utente.value.communityMobilizer = {}
+  utente.value.communityMobilizer.id = mobilizer.value.id
 
   if (utente.value.syncStatus === 'S' || utente.value.syncStatus === 'U') {
     utente.value.syncStatus = 'U'

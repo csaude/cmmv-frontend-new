@@ -1,13 +1,11 @@
 import { useRepo } from 'pinia-orm';
 import api from '../apiService/apiService';
 import { nSQL } from 'nano-sql';
-import Province from 'src/stores/models/province/Province';
-import { useSwal } from 'src/composables/shared/dialog/dialog';
+import Province from 'src/stores/models/province/Province';;
 import { useSystemUtils } from 'src/composables/shared/systemUtils/systemUtils';
 
 const province = useRepo(Province);
 
-const { alertSucess, alertError } = useSwal();
 const { isMobile, isOnline } = useSystemUtils();
 
 export default {
@@ -46,6 +44,7 @@ export default {
         .get('province?offset=' + offset + '&max=100')
         .then((resp) => {
           province.save(resp.data);
+          this.putMobile(resp.data)
           offset = offset + 100;
           if (resp.data.length > 0) {
             this.get(offset);

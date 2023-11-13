@@ -53,6 +53,7 @@ export default {
         .get('district?offset=' + offset + '&max=100')
         .then((resp) => {
           district.save(resp.data);
+          this.putMobile(resp.data)
           offset = offset + 100;
           if (resp.data.length > 0) {
             this.get(offset);

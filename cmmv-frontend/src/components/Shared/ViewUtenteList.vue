@@ -78,6 +78,7 @@ import { useSwal } from 'src/composables/shared/dialog/dialog';
 import clinicService from '../../services/api/clinic/clinicService'
 import communityMobilizerService from '../../services/api/mobilizer/CommunityMobilizerService'
 import utenteService from 'src/services/api/utente/UtenteService'
+import appointmentService from '../../services/api/appointment/appointmentService'
 
 const show_dialog =ref(false)
 
@@ -157,6 +158,7 @@ timer.value = setTimeout(() => {
               //  $emit('update:utente', utenteOld)
             //   this.finalize(reset)
             utenteService.deleteMobile(utenteOld.id)
+            alertSucess('O Registo foi removido com sucesso');
           }).onCancel(() => {
               // console.log('>>>> Cancel')
                finalize(reset)
@@ -187,42 +189,15 @@ const onRight = ({ reset }, utente) => {
            showloading();
          utente.appointments = []
          utente.status = 'ASSOCIADO'
-         utente.communityMobilizer = communityMobilizerService.getMobilizerById(localStorage.getItem('id_mobilizer'))
+         utente.communityMobilizer = {}
+      //   utente.communityMobilizer = communityMobilizerService.getMobilizerById(localStorage.getItem('id_mobilizer'))
          utente.communityMobilizer_id = Number(localStorage.getItem('id_mobilizer'))
-       /*  await Utente.api().patch('/utente/' + utente.id, utente).then(resp => {
-         this.$emit('update:utente', utente)
-          this.$q.loading.hide()
-              this.$q.notify({
-                  message: 'O utente ' + utente.firstNames + ' ' + utente.lastNames + ' foi removido da lista.',
-                  color: 'teal'
-              })
-         }).catch(error => {
-          this.$q.loading.hide()
-           this.$q.notify({
-                  message: 'Aconteceu um erro inesperado.',
-                  color: 'red'
-          })
-          this.finalize(reset)
-          this.$q.loading.hide()
-          console.log('Erro no code ' + error)
-        }) */
-       // const appointment = Appointment.query().where('utente_id', utente.id).get()
-       // const appointmentId = appointment.id
-      //   console.log(db.newDb().collection('appointments'))
-           db.newDb().collection('appointments').doc({ id: appointment[0].id }).delete()
-             db.newDb().collection('utentes').doc({ id: utente.id }).set(
-utente
-)
-Utente.update({
-        where: (utenteVue) => {
-    return utenteVue.id === utente.id
-  },
-        data: utente
-      })
-      Appointment.delete(appointment[0].id)
+         utente.communityMobilizer.id = Number(localStorage.getItem('id_mobilizer'))
+         console.log(appointmentService.getAppointmentByUtenteId(utente.id))
+         appointmentService.deleteMobile(appointmentService.getAppointmentByUtenteId(utente.id).id)
+          utenteService.putMobile(utente)
        //   this.finalize(reset)
           closeLoading()
-          $emit('update:utente', utente)
       }
       }
 
@@ -234,12 +209,9 @@ const activeUSForm = (open, utenteParam) => {
      if (open) {
           isOnlineChecker()
         }
-      //  Utente.update(utente)
         show_dialog.value = open
         utente.value = utenteParam
         showUtenteULinkScreen.value = true
-    //  $emit('update:showUtenteULinkScreenProp', open)
-   //    $emit('update:utente', utente)
 }
 
 

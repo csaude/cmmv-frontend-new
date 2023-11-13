@@ -1,7 +1,10 @@
 <template>
 <div class="row q-mb-md">
-                <combo-field
-                    class="col"
+                <q-select
+                class="col"
+                    dense
+                    outlined
+                    rounded
                     v-model="province"
                     :options="provinces"
                     transition-show="flip-up"
@@ -12,8 +15,11 @@
                     :rules="[ val => ( val != null ) || ' Por favor indique a província']"
                     lazy-rules
                     label="Província" />
-                <combo-field
+                <q-select
                     class="col q-ml-md"
+                    dense
+                    outlined
+                    rounded
                      transition-show="flip-up"
                     transition-hide="flip-down"
                     v-model="district"
@@ -82,117 +88,91 @@
       </q-dialog>
     </div>
 </template>
-
-<script>
-import CommunityMobilizer from '../../store/models/mobilizer/CommunityMobilizer'
-// import { MobilizerLogin } from '../../store/models/userLogin/MobilizerLogin'
-import Province from 'src/store/models/province/Province'
-import District from 'src/store/models/district/District'
+<script setup>
+import communityMobilizerService from 'src/services/api/mobilizer/CommunityMobilizerService'
+import provinceService from 'src/services/api/province/provinceService'
+import districtService from 'src/services/api/district/districtService'
+import addMobilizer from   'components/Clinic/AddMobilizer.vue';
+import { useLoading } from 'src/composables/shared/loading/loading';
+import { useSwal } from 'src/composables/shared/dialog/dialog';
 import { QSpinnerIos } from 'quasar'
 import { ref } from 'vue'
-export default {
-   props: ['backToDashBoard'],
-    data () {
-      const filter = ref('')
-        return {
-            mobilizer: new CommunityMobilizer(),
-            mobilizerLogin: {},
-            province: null,
-            district: null,
-               showMobilizerRegistrationScreen: false,
-                editMode: false,
-                 initialDistrict: 0,
-                filter,
-            columns: [
+
+
+
+
+
+const columns = [
                 { name: 'firstNames', align: 'left', label: 'Nome', field: row => row.firstNames, format: val => `${val}`, sortable: true },
                 { name: 'lastNames', align: 'left', label: 'Apelido', field: row => row.lastNames, format: val => `${val}`, sortable: true },
                 { name: 'cellNumber', align: 'left', label: 'Número de Telefone', field: row => row.cellNumber, format: val => `${val}`, sortable: true },
                 { name: 'actions', label: 'Opções', align: 'left', field: 'actions' }
             ]
-        }
-    },
-     mounted () {
-        this.getAllProvinces()
-      CommunityMobilizer.apiFetchByDistrictId(localStorage.getItem('idLogin'))
-    },
-    computed: {
-        provinces () {
-           return Province.query().orderBy('code').has('code').get()
-        },
-        districts () {
-        if (this.province !== null) {
-            return District.query().withAll().where('province_id', this.province.id).get()
-        } else {
-            return null
-        }
-        },
-        // mobilizers () {
-         //   return CommunityMobilizer.query().has('firstNames').get()
-       // }
-         mobilizers () {
-           if (this.district != null) {
-          return this.getMobilizersByDistrictId()
+
+
+const filter = ref('')
+const { alertSucess, alertError, alertInfo } = useSwal();
+const { closeLoading, showloading } = useLoading();
+const mobilizer = ref('')
+const province = ref(null)
+const district = ref(null)
+const showMobilizerRegistrationScreen = ref(null)
+const editMode = ref(false)
+const initialDistrict = ref(0)
+
+
+onMounted(() => {
+  showloading();
+  getAllProvinces()
+  communityMobilizerService.apiFetchByDistrictId(localStorage.getItem('idLogin'))
+});
+
+const provinces =  computed(() => {
+  return provinceService.getAllProvinces();
+});
+
+const districts =  computed(() => {
+    if (province.value !== null) {
+  return districtService.getAllByProvinceId(province.value.id);
+    } else {
+        return null
+    }
+});
+
+const mobilizers = computed(() => {
+  if (district.value != null) {
+          return getMobilizersByDistrictId()
            } else {
              return []
            }
-        }
-    },
-    created () {
-      this.showLoading()
-        this.mobilizer.clinic = Object.assign({}, this.clinic)
-    },
-    methods: {
-       addMobilizer () {
-          this.mobilizer = new CommunityMobilizer()
-         this.showMobilizerRegistrationScreen = true
-           this.editMode = false
-      },
-      editMobilizer (mobilizer) {
-        this.mobilizer = Object.assign({}, mobilizer)
-         this.showMobilizerRegistrationScreen = true
-         this.editMode = true
-      },
-        getAllProvinces (offset) {
-        if (this.provinces.length <= 0) {
-                Province.api().get('/province').then(resp => {
-                    offset = offset + 100
-                    if (resp.response.data.length > 0) { setTimeout(this.getAllProvinces(offset), 2) }
-                }).catch(error => {
-                    console.log(error)
-                })
-        }
-    },
-     getMobilizersByDistrictId () {
-            if (this.district != null && this.initialDistrict !== this.district.id) {
-               this.$q.loading.show({
-          spinner: QSpinnerIos,
-          message: 'Carregando Mobilizadores. Por favor, aguarde...'
-        })
-              this.initialDistrict = this.district.id
-              CommunityMobilizer.apiFetchByDistrictId(this.district.id).then(resp => {
-                  this.$q.loading.hide()
+});
+
+const getMobilizersByDistrictId = () => {
+            if (district.value != null && initialDistrict.value !== district.value.id) {
+              showloading()
+              initialDistrict.value =  district.value.id
+              communityMobilizerService.apiFetchByDistrictId(district.value.id).then(resp => {
+                closeLoading()
               })
             }
-              return CommunityMobilizer.query().has('firstNames').where('district_id', parseInt(this.district.id)).get()
-        },
-     showLoading () {
-        this.$q.loading.show({
-          spinner: QSpinnerIos,
-          message: 'Por favor, aguarde...'
-     })
-        // hiding in 2s
-        this.timer = setTimeout(() => {
-         this.$q.loading.hide()
-          this.timer = void 0
-        }, 2000)
-      }
-    },
-    components: {
-         addMobilizer: require('components/Clinic/AddMobilizer.vue').default,
-           'combo-field': require('components/Shared/ComboField.vue').default
-    }
+    return communityMobilizerService.getMobilizerByDistrictId(parseInt(district.value.id))
+        }
 
-}
+const addMobilizer = () => {
+  mobilizer.value = new CommunityMobilizer()
+         showMobilizerRegistrationScreen.value = true
+           editMode.value = false
+        }
+
+const editMobilizer = (mobilizer) => {
+  mobilizer.value = Object.assign({}, mobilizer)
+  showMobilizerRegistrationScreen.value = true
+  editMode.value = true
+        }
+
+const getAllProvinces = () => {
+   return provinceService.getAllProvinces()
+}       
 </script>
 
 <style>

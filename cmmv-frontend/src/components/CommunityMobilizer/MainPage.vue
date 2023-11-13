@@ -171,8 +171,6 @@
       </div>
       <q-dialog persistent v-model="showMobilizerRegistrationScreen">
           <addMobilizer
-            :selectedMobilizer="mobilizer"
-             :editModeMobilizer=editModeMobilizer
             @close="showMobilizerRegistrationScreen = false" />
       </q-dialog>
        <q-dialog persistent v-model="showChangePasswordScreen">
@@ -185,15 +183,10 @@
 <script setup>
 import { ref,onMounted,computed,onBeforeUnmount,provide } from 'vue'
 import { useQuasar, QSpinnerIos } from 'quasar'
-import Utente from '../../stores/models/utente/Utente';
-import CommunityMobilizer from '../../stores/models/mobilizer/CommunityMobilizer'
 import Clinic from '../../stores/models/clinic/Clinic'
-import Province from '../../stores/models/province/Province'
-import District from '../../stores/models/district/District'
-// import SyncronizingService from '../../services/SyncronizingService'
+ import SyncronizingService from '../../services/SyncronizingService'
 import db from 'src/stores/localbase'
 import isOnline from 'is-online'
-import Appointment from '../../stores/models/appointment/Appointment'
 import communityMobilizerService from '../../services/api/mobilizer/CommunityMobilizerService';
 import utenteService from '../../services/api/utente/UtenteService'
 import { useRouter,useRoute } from 'vue-router';
@@ -201,15 +194,16 @@ import utenteRegistration from 'components/Utente/UtenteRegistration.vue';
 import utentesViewList from 'components/Shared/ViewUtenteList.vue';
  import viewDocs from 'components/Home/MaterialEducativo.vue';
 import { useLoading } from 'src/composables/shared/loading/loading';
-// import addMobilizer from 'components/Clinic/AddMobilizer.vue';
-// import changePassword from 'components/Shared/ChangePassword.vue';
+ import addMobilizer from 'components/Clinic/AddMobilizer.vue';
+import changePassword from 'components/Shared/ChangePassword.vue';
 import { Notify } from 'quasar'
 import provinceService from 'src/services/api/province/provinceService';
 import districtService from 'src/services/api/district/districtService';
+import clinicService from '../../services/api/clinic/clinicService';
 
 const { closeLoading, showloading } = useLoading();
 
-const tab = ref('');
+const tab = ref('associados');
 const leftDrawerOpen = ref(false);
 const showUtenteRegistrationScreen = ref(false);
 const showUtenteULinkScreen = ref(false);
@@ -217,6 +211,7 @@ const clientList = ref(false);
 const optionButtons = ref(true);
 const clientsManager = ref(false);
 const docsDisplay = ref(false);
+const editModeMobilizer = ref(false);
 const indexEdit =  ref(1);
 const showMobilizerRegistrationScreen = ref(false);
 const showChangePasswordScreen = ref(false)
@@ -225,6 +220,7 @@ const timerToSyncronizeConst = ref(0);
 const $q = useQuasar();
 const router = useRouter();
 const route = useRoute();
+
 
 const utenteToEdit = ref();
 /*
@@ -247,7 +243,6 @@ const utente = ref({ firstNames: '',
  localStorage.setItem('isProcessing', 'false')
 
 const mobilizer = computed(() => {
-  console.log(communityMobilizerService.getMobilizerById(route.params.id))
   return communityMobilizerService.getMobilizerById(route.params.id)
 });
 
@@ -264,63 +259,9 @@ const utentesEnviados =  computed(() => {
 });
 
 const getAllUtente = async () => {
-  /*
- let utentesApiList = []
-      await Utente.api().get('/utente/communityMobilizer/' + route.params.id).then(resp => {
-             offset = offset + 100
-             utentesApiList = resp.response.data
-             Utente.localDbGetAll().then(utentes => {
-               if (utentes.length === 0) {
-                  utentesApiList.forEach(utente => {
-                    utente.communityMobilizer = mobilizer
-                    if (utente.syncStatus === undefined || utente.syncStatus === null) {
-                        utente.syncStatus = 'S'
-                    }
-                  Utente.localDbAddWithKey(utente)
-                 })
-               }
-             })
-              $q.loading.hide()
-        }).catch(error => {
-           $q.loading.hide()
-            console.log(error)
-        }) 
-        */
         utenteService.apiFetchByMobilizer(route.params.id)
 }
-const getAllClinics = async (offset) => {
-  await Clinic.api().get('/clinic?offset=' + offset + '&max=100').then(resp => {
-            offset = offset + 100
-             this.$q.loading.hide()
-            // if (resp.response.data.length > 0) {
-            //   setTimeout(this.getAllClinics(offset), 2)
-            // }
-            }).catch(error => {
-                console.log(error)
-                this.$q.loading.hide()
-            })
-}
-const getAllProvinces = async (offset) => {
-    await Province.api().get('/province?offset=' + offset + '&max=100').then(resp => {
-            offset = offset + 100
-            // if (resp.response.data.length > 0) {
-            //   setTimeout(getAllClinics(offset), 2)
-            // }
-            }).catch(error => {
-                console.log(error)
-            })
-}
 
-const getAllDistricts = async (offset) => {
-    await Province.api().get('/province?offset=' + offset + '&max=100').then(resp => {
-            offset = offset + 100
-            // if (resp.response.data.length > 0) {
-            //   setTimeout(getAllClinics(offset), 2)
-            // }
-            }).catch(error => {
-                console.log(error)
-            })
-}
 
 const getMobilizer = async () => {
   return communityMobilizerService.apiFetchById(route.params.id)
@@ -328,6 +269,9 @@ const getMobilizer = async () => {
 
 const getDataLocalBase = async () => {
   utenteService.getMobile()
+  provinceService.getMobile()
+  districtService.getMobile()
+  clinicService.getMobile()
   /*  
   Utente.deleteAll()
       Appointment.deleteAll()
@@ -444,7 +388,7 @@ const isOnlineChecker = async (sync) => {
 }
 
 const sendUtente = (status) => {
-  // SyncronizingService.sendUtentes()
+   SyncronizingService.sendUtentes()
 }
 
 const checkOnlineToSync1 = (status) => {
@@ -474,16 +418,7 @@ const verificationDialog = () => {
                 },
                 persistent: true
             }).onOk(() => {
-               db.newDb().collection('utentes').get({ keys: true }).then(utentes => {
-                    const utentesToSend = []
-                    utentes.forEach(utente => {
-                        if (utente.data.syncStatus === 'P') {
-                            utentesToSend.push(utente.data)
-                        } else if (utente.data.syncStatus === 'U') {
-                            utente.data.idServer = utente.key.toString()
-                            utentesToSend.push(utente.data)
-                        }
-                    })
+              utenteService.getMobileUtenteToSend().then(utentesToSend => {
                     alert(utentesToSend.length)
                      if (utentesToSend.length === 0) {
                         Notify.create({
@@ -522,20 +457,25 @@ const verificationDialog = () => {
         }
 
 onMounted(() => {
-//  showloading();
-  getMobilizer();
-       provinceService.get(0);
-   districtService.get(0);
+  showloading();
+ // getMobilizer();
+    //   provinceService.get(0);
+   // districtService.get(0);
   init();
 });
 
-const init = () => {
+const init = async () => {
      // showloading();
     const offset = 0
     isOnlineChecker(false)
-    getAllUtente()
     getDataLocalBase()
    timerToSyncronize()
+  const communityMobilizers = await communityMobilizerService.getMobile()
+  if (communityMobilizers === undefined||communityMobilizers.length === 0) {
+    getMobilizer();
+    getAllUtente()
+    closeLoading();
+  } 
    /*
     CommunityMobilizer.localDbGetAll().then(mobilizers => {
       if (mobilizers.length === 0) {
@@ -564,6 +504,7 @@ provide('showUtenteRegistrationScreen', showUtenteRegistrationScreen);
 provide('mobilizer', mobilizer);
 provide('indexEdit',indexEdit)
 provide('utenteToEdit',utenteToEdit)
+provide('editModeMobilizer',editModeMobilizer)
 </script>
 <style>
 .scroll-area{

@@ -46,6 +46,7 @@ export default {
       .post('communityMobilizer', params)
       .then((resp) => {
         communityMobilizer.save(resp.data);
+        return resp;
       });
   },
   getWeb(offset: number) {
@@ -70,6 +71,7 @@ export default {
       .then((resp) => {
         communityMobilizer
       .save(resp.data);
+      return resp;
       });
   },
   deleteWeb(id: number) {
@@ -84,8 +86,15 @@ export default {
       .get(`/communityMobilizer/${id}`)
       .then((resp) => {
         communityMobilizer.save(resp.data);
+        this.putMobile(resp.data)
         return resp;
       });
+  },
+   async apiFetchByDistrictId (districtId:number) {
+    return await api().get('/communityMobilizer/district/' + districtId).then((resp) => {
+      communityMobilizer.save(resp.data);
+      return resp;
+    });
   },
   // Mobile
   putMobile(params: string) {
@@ -142,5 +151,8 @@ export default {
   },
   update(mobilizer :any) {
     communityMobilizer.save(mobilizer);
-  }
+  },
+  getMobilizerByDistrictId(districtId :number) {
+   return communityMobilizer.query().has('firstNames').where('district_id', districtId).get()
+  },
 };

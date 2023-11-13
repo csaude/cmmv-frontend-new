@@ -3,7 +3,7 @@ import { UserLogin } from 'src/stores/models/userLogin/UserLogin'
 import api from 'src/services/api/apiService/apiService';
 import { useRepo } from 'pinia-orm';
 import { useSystemUtils } from 'src/composables/shared/systemUtils/systemUtils';
-
+import { nSQL } from 'nano-sql';
 
 const userLogin = useRepo(UserLogin);
 
@@ -94,6 +94,18 @@ export default {
         }
       })
   },
+  apiPost (userType:string,objectToSend :any) {
+    return api().put(`${userType}/`,objectToSend)
+      .catch((error) => {
+        if (error.response) {
+          console.log(error.response)
+        } else if (error.request) {
+          console.log(error.request)
+        } else {
+          console.log('Error', error.message)
+        }
+      })
+  },
   getUser (params:any) {
     return api().get('secUser/' + params.id).then(resp => {
        // this.submitting = false
@@ -109,6 +121,23 @@ export default {
         }
       })
   },
+   async apiGetAll () {
+    return await api().get('/secUser')
+  },
+  async getAllUsersByDistrictId (districtId:number) {
+    return await api().get('/districtUserLogin/district/' + districtId).then(resp => {
+      userLogin.save(resp.data);
+  }).catch(error => {
+      console.log(error)
+  })
+  },
+  async getAllUsersByClinicId (clinicId:number) {
+    await api().get('/userLogin/clinic/' + clinicId).then(resp => {
+      userLogin.save(resp.data);
+     }).catch(error => {
+         console.log(error)
+     })
+ },
   deleteUser (id:number) {
     return api().delete('user/' + id)
       .catch((error) => {
@@ -125,4 +154,33 @@ export default {
   getUserByUserName(username: string) {
     return userLogin.query().where('username', username).first();
   },
+
+  putMobile(params:any) {
+    return nSQL(UserLogin.entity)
+      .query('upsert', params)
+      .exec()
+      .then(() => {
+        userLogin.save(params);
+      })
+      .catch((error: any) => {
+        console.log(error);
+      });
+  },
+  getMobile() {
+    return nSQL(UserLogin.entity)
+      .query('select')
+      .exec()
+      .then((rows: any) => {
+        userLogin.save(rows);
+        return rows;
+      })
+      .catch((error: any) => {
+        console.log(error);
+      });
+  },
+
+  getAllUsers() {
+    return userLogin.all();
+  },
+  
 }

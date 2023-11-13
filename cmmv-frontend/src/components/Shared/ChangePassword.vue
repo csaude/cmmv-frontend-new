@@ -4,7 +4,7 @@
             <q-card-section class="q-px-md">
              <h5 center> Alterar Senha</h5>
                <div class="row q-mt-md">
-               <q-input v-model="password" filled :type="isPwd ? 'password' : 'text'" label="Senha Actual" ref="password"  class="col"   :rules="[ val => ( val != null ) || ' Por favor preencha a senha']">
+               <q-input v-model="password" filled :type="isPwd ? 'password' : 'text'" label="Senha Actual" ref="passwordRef"  class="col"   :rules="[ val => ( val != null ) || ' Por favor preencha a senha']">
         <template v-slot:append>
           <q-icon
             :name="isPwd ? 'visibility_off' : 'visibility'"
@@ -15,7 +15,7 @@
       </q-input>
             </div>
             <div class="row">
-               <q-input v-model="newPassword" filled :type="isPwd ? 'password' : 'text'" label="Nova Senha" class="col" ref="newPassword" :rules="[ val => ( val != null ) || ' Por favor preencha a senha']">
+               <q-input v-model="newPassword" filled :type="isPwd ? 'password' : 'text'" label="Nova Senha" class="col" ref="newPasswordRef" :rules="[ val => ( val != null ) || ' Por favor preencha a senha']">
         <template v-slot:append>
           <q-icon
             :name="isPwd ? 'visibility_off' : 'visibility'"
@@ -26,7 +26,7 @@
       </q-input>
             </div>
             <div class="row">
-               <q-input v-model="confirmNewPassword" filled :type="isPwd ? 'password' : 'text'" label="Confirmação da Nova Senha"  class="col" ref="confirmNewPassword" :rules="[ val => ( val != null ) || ' Por favor preencha a senha']">
+               <q-input v-model="confirmNewPassword" filled :type="isPwd ? 'password' : 'text'" label="Confirmação da Nova Senha"  class="col" ref="confirmNewPasswordRef" :rules="[ val => ( val != null ) || ' Por favor preencha a senha']">
         <template v-slot:append>
           <q-icon
             :name="isPwd ? 'visibility_off' : 'visibility'"
@@ -38,68 +38,64 @@
             </div>
             </q-card-section>
            <q-card-actions align="right" class="q-mb-md">
-               <q-btn label="Cancelar" color="primary" @click="$emit('close')"/>
-                <q-btn type="submit" :loading="this.submitting" label="Submeter" color="primary" />
+               <q-btn label="Cancelar" color="primary" @click="emit('close')"/>
+                <q-btn type="submit" :loading="submitting" label="Submeter" color="primary" />
             </q-card-actions>
         </form>
     </q-card>
 </template>
-<script>
+<script setup>
 import { ref } from 'vue'
 import bcrypt from 'bcryptjs'
-import db from 'src/store/localbase'
-export default {
-  data () {
-    return {
-      password: ref(''),
-      newPassword: ref(''),
-      confirmNewPassword: ref(''),
-      isPwd: ref(true),
-      submitting: false,
-      dataBaseUser: {},
-       user: {
-        password: '',
-        newPassword: '',
-        confirmNewPassword: ''
-      }
-    }
-  },
-      methods: {
-         validateUser () {
-            this.submitting = true
-            this.$refs.password.validate()
-             this.$refs.newPassword.validate()
-               this.$refs.confirmNewPassword.validate()
-            if (!this.$refs.password.hasError && !this.$refs.newPassword.hasError &&
-            !this.$refs.confirmNewPassword.hasError) {
-              const match = bcrypt.compareSync(this.password, this.dataBaseUser.password.substring(8))
+import UsersService from 'src/services/UsersService';
+// import db from 'src/store/localbase'
+import { useSwal } from 'src/composables/shared/dialog/dialog';
+
+const { alertSucess } = useSwal();
+const password = ref('')
+const newPassword = ref('')
+const confirmNewPassword = ref('')
+const passwordRef = ref(null);
+const newPasswordRef = ref(null);
+const confirmNewPasswordRef = ref(null);
+const isPwd = ref(true)
+const submitting = ref(false)
+// const dataBaseUser = ref({})
+
+
+const validateUser = () => {
+  submitting.value = true
+  passwordRef.value.validate()
+  newPasswordRef.value.validate()
+  confirmNewPasswordRef.value.validate()
+
+   if (!passwordRef.value.hasError && !newPasswordRef.value.hasError &&
+            !confirmNewPasswordRef.value.hasError) {
+              const match = bcrypt.compareSync(password.value, dataBaseUser.value.password.substring(8))
               if (match) {
-                if (this.newPassword === this.confirmNewPassword) {
-             const hash = bcrypt.hashSync(this.newPassword, 12)
-                 this.dataBaseUser.password = '{bcrypt}' + hash
-                    const localBaseUser = JSON.parse(JSON.stringify(this.dataBaseUser))
-         db.newDb().collection('users').doc({ idLogin: this.dataBaseUser.idLogin }).set(localBaseUser)
-          this.$q.notify({
-                    message: 'A senha foi actualizado com sucesso.',
-                                    color: 'teal'
-                                })
-         this.$emit('close')
-                //  this.dataBaseUser.password = this.newPassword
-                  //     db.newDb().collection('users').doc({ id: this.dataBaseUser.id }).set(this.dataBaseUser)
+                if (newPassword.value === confirmNewPassword.value) {
+             const hash = bcrypt.hashSync(newPassword, 12)
+                 dataBaseUser.value.password = '{bcrypt}' + hash
+                    const localBaseUser = JSON.parse(JSON.stringify(dataBaseUser))
+        UsersService.putMobile(localBaseUser)
+        alertSucess('A senha foi actualizado com sucesso.')
+         emit('close')
                 }
               }
-               this.submitting = false
+               submitting.value = false
             }
-        },
-        getLocalBaseUser () {
-      db.newDb().collection('users').get().then(users => {
-           this.dataBaseUser = users[0]
-        })
-      }
-    },
-  created () {
-    console.log(1111)
-       this.getLocalBaseUser()
-    }
-  }
+}
+
+const dataBaseUser = () => {
+  return UsersService.getUserByUserName(localStorage.getItem('user'));
+}
+
+
+
+onMounted(() => {
+ // getLocalBaseUser()
+});
+
+
+
 </script>

@@ -1,4 +1,11 @@
 import { Model } from 'pinia-orm'
+import District from '../district/District';
+import CommunityMobilizer from '../mobilizer/CommunityMobilizer';
+import Province from '../province/Province';
+import Utente from '../utente/Utente';
+//import { DistrictUserLogin } from './UserLoginHierarchy'
+//import { MobilizerLogin } from './UserLoginHierarchy'
+//import { UtenteLogin } from './UserLoginHierarchy'
 //import db from 'src/store/localbase'
 
 export class UserLogin extends Model {
@@ -9,13 +16,16 @@ export class UserLogin extends Model {
       fetching: false
     }
 }
-  // static types () {
-  //   return {
-  //       UTENTELOGIN: UtenteLogin,
-  //       MOBILIZERLOGIN: MobilizerLogin
-  //   }
-  // }
-
+/*
+static types () {
+  return {
+    DISTRICTUSERLOGIN: DistrictUserLogin,
+    UserLogin: UserLogin,
+    MOBILIZERLOGIN: MobilizerLogin,
+    UTENTELOGIN: UtenteLogin,
+  }
+}
+*/
   static fields () {
     return {
       id: this.attr(null),
@@ -29,40 +39,18 @@ export class UserLogin extends Model {
       lastNames: this.attr(''),
       province_id: this.attr(''),
       district_id: this.attr(''),
-      clinic_id: this.attr('')
+      clinic_id: this.attr(''),
+      utente_id: this.attr(null),
+      utente: this.belongsTo(Utente, 'utente_id'),
+      mobilizer_id: this.attr(null),
+      mobilizer: this.belongsTo(CommunityMobilizer, 'mobilizer_id'),
+      district: this.belongsTo(District, 'district_id'),
+      province: this.belongsTo(Province, 'province_id'),
+      source: this.attr('')
     }
   }
-/*
-  static async apiGetAll () {
-    return await this.api().get('/secUser')
-  }
+  static piniaOptions = {
+    persist: true,
+  };
 
-  static localDbAdd (user) {
-    return db.newDb().collection('users').add(user)
-  }
-
-  static localDbGetById (id) {
-    return db.newDb().collection('users').doc({ id: id }).get()
-  }
-
-  static localDbGetAll () {
-    return db.newDb().collection('users').get()
-  }
-
-  static localDbUpdate (user) {
-    return db.newDb().collection('users').doc({ id: user.id }).set(user)
-  }
-
-  static localDbUpdateAll (users) {
-    return db.newDb().collection('users').set(users)
-  }
-
-  static localDbDelete (user) {
-    return db.newDb().collection('users').doc({ id: user.id }).delete()
-  }
-
-  static localDbDeleteAll () {
-    return db.newDb().collection('users').delete()
-  }
-  */
 }

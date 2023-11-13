@@ -25,7 +25,7 @@
             <utentes-view-list :utentes="utentesPendente"/>
           </q-tab-panel-->
           <q-tab-panel name="associados">
-            <utentes-view-list v-if="this.mobilizer" :utentes="utentesAssociados" v-model:showUtenteULinkScreenProp="showUtenteULinkScreen" />
+            <utentes-view-list v-if="mobilizer" :utentes="utentesAssociados" />
             <div class="absolute-bottomg">
               <q-page-sticky position="bottom-right" :offset="[18, 18]">
                 <q-btn size="xl" fab icon="add" @click="showUtenteRegistrationScreen = true" color="primary" />
