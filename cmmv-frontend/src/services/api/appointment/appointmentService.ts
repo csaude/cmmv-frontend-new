@@ -67,9 +67,7 @@ export default {
     return api()
       .patch('appointment/' + uuid, params)
       .then((resp) => {
-        appointment
-      .save(resp.data);
-      return resp;
+        appointment.save(resp.data);
       });
   },
   deleteWeb(uuid: string) {
@@ -79,32 +77,51 @@ export default {
         appointment.destroy(uuid);
       });
   },
+
+  getAppointments(id_clinicUser: any) {
+    // Buscar as consults pelo id da clinica logada
+    return api()
+      .get('/appointment/clinic/' + id_clinicUser)
+      .then((resp) => {
+        console.log(resp);
+        let appointmentApiList = [];
+        appointmentApiList = resp.data;
+        appointmentApiList.forEach((appointment) => {
+          if (appointment.status === 'CONFIRMADO') {
+            appointment.syncStatus = 'S';
+          }
+          this.putMobile(appointment);
+        });
+      })
+      .catch((error) => {
+        console.log('Erro no code ' + error);
+      });
+  },
+
   // Mobile
   putMobile(params: string) {
-    return nSQL(Appointment
-    .entity)
+    return nSQL(Appointment.entity)
       .query('upsert', params)
       .exec()
       .then((resp) => {
         appointment.save(resp[0].affectedRows);
       });
   },
-  getMobile() {
-    return nSQL(Appointment
-    .entity)
+  async getMobile() {
+    return nSQL(Appointment.entity)
       .query('select')
       .exec()
       .then((rows: any) => {
         appointment.save(rows);
+        return rows;
       })
       .catch((error: any) => {
         // alertError('Aconteceu um erro inesperado nesta operação.');
         console.log(error);
       });
   },
-  deleteMobile(paramsId: number) {
-    return nSQL(Appointment
-    .entity)
+  deleteMobile(paramsId: string) {
+    return nSQL(Appointment.entity)
       .query('delete')
       .where(['id', '=', paramsId])
       .exec()
@@ -166,4 +183,124 @@ export default {
   getAppointmentByUtenteId(utenteId:number) {
     return appointment.query().where('utente_id', utenteId).first()
   }
+  getPendingAssignment(searchText: string) {
+    if (searchText.length === 0) {
+      return appointment
+        .query()
+        .with('utente')
+        .with('clinic.province')
+        .with('clinic.district.province')
+        .with('utente.address')
+        .with('utente.province')
+        .with('utente.district.province')
+        .with('utente.communityMobilizer')
+        .with('utente.clinic')
+        .where((appointment) => {
+          return (
+            appointment.status === 'PENDENTE' &&
+            appointment.appointmentDate !== '' &&
+            appointment.clinic_id ===
+              Number(localStorage.getItem('id_clinicUser'))
+          );
+        })
+        .orderBy('appointmentDate', 'desc')
+        .get();
+    } else {
+      // this.appointmentsPendingToFilter = this.appointmentsPending
+      return appointment
+        .query()
+        .with('utente')
+        .with('clinic.province')
+        .with('clinic.district.province')
+        .with('utente.address')
+        .with('utente.province')
+        .with('utente.district.province')
+        .with('utente.communityMobilizer')
+        .with('utente.clinic')
+        .where((appointment) => {
+          return (
+            appointment.status === 'PENDENTE' &&
+            appointment.appointmentDate !== '' &&
+            appointment.clinic_id ===
+              Number(localStorage.getItem('id_clinicUser'))
+          );
+        })
+        .whereHas('utente', (query) => {
+          query.where((utente) => {
+            return (
+              utente.systemNumber
+                .toLowerCase()
+                .includes(searchText.toLowerCase()) ||
+              utente.firstNames
+                .toLowerCase()
+                .includes(searchText.toLowerCase()) ||
+              utente.lastNames.toLowerCase().includes(searchText.toLowerCase())
+            );
+          });
+        })
+        .orderBy('appointmentDate', 'desc')
+        .get();
+    }
+  },
+
+  getConfirmedAssignment(searchTextConfirmed: any, searchText: any) {
+    if (searchTextConfirmed.length === 0) {
+      return appointment
+        .query()
+        .with('utente')
+        .with('clinic.province')
+        .with('clinic.district.province')
+        .with('utente.address')
+        .with('utente.province')
+        .with('utente.district.province')
+        .with('utente.communityMobilizer')
+        .with('utente.clinic')
+        .where((appointment) => {
+          return (
+            appointment.status === 'CONFIRMADO' &&
+            !appointment.hasHappened &&
+            appointment.appointmentDate !== '' &&
+            appointment.clinic_id ===
+              Number(localStorage.getItem('id_clinicUser'))
+          );
+        })
+        .orderBy('appointmentDate', 'desc')
+        .get();
+    } else {
+      return appointment
+        .query()
+        .with('utente')
+        .with('clinic.province')
+        .with('clinic.district.province')
+        .with('utente.address')
+        .with('utente.province')
+        .with('utente.district.province')
+        .with('utente.communityMobilizer')
+        .with('utente.clinic')
+        .where((appointment) => {
+          return (
+            appointment.status === 'CONFIRMADO' &&
+            !appointment.hasHappened &&
+            appointment.appointmentDate !== '' &&
+            appointment.clinic_id ===
+              Number(localStorage.getItem('id_clinicUser'))
+          );
+        })
+        .whereHas('utente', (query) => {
+          query.where((utente) => {
+            return (
+              utente.systemNumber
+                .toLowerCase()
+                .includes(searchText.toLowerCase()) ||
+              utente.firstNames
+                .toLowerCase()
+                .includes(searchText.toLowerCase()) ||
+              utente.lastNames.toLowerCase().includes(searchText.toLowerCase())
+            );
+          });
+        })
+        .orderBy('appointmentDate', 'desc')
+        .get();
+    }
+  },
 };

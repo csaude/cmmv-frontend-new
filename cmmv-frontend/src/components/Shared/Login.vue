@@ -1,93 +1,156 @@
 <template>
-  <q-page >
-   <q-card :square="false"
-        style="background: radial-gradient(circle at left, #E9BFB1 10%, #EE764E 100%); border-bottom-left-radius: 100em; border-bottom-right-radius: 100em">
-    <div class="row q-py-lg q-ml-lg">
-        <q-btn flat round color="white" icon="chevron_left" @click="$emit('previousScreen')"/>
+  <q-page>
+    <q-card
+      :square="false"
+      style="
+        background: radial-gradient(circle at left, #e9bfb1 10%, #ee764e 100%);
+        border-bottom-left-radius: 100em;
+        border-bottom-right-radius: 100em;
+      "
+    >
+      <div class="row q-py-lg q-ml-lg">
+        <q-btn
+          flat
+          round
+          color="white"
+          icon="chevron_left"
+          @click="$emit('previousScreen')"
+        />
         <div class="row q-py-lg q-mr-sm fixed-top-right">
-        <q-btn flat  unelevated rounded push dense color="deep-orange-10" @click="setAdministrationScreen" :label=labelAdmin text-color="white" class="glossy" icon-right="admin_panel_settings"  />
+          <q-btn
+            flat
+            unelevated
+            rounded
+            push
+            dense
+            color="deep-orange-10"
+            @click="setAdministrationScreen"
+            :label="labelAdmin"
+            text-color="white"
+            class="glossy"
+            icon-right="admin_panel_settings"
+          />
         </div>
-    </div>
-    <div class="row q-pa-xl texte-center q-mt-lg column">
-        <div style="font-family: 'Arial';font-size: 40px; font-weight: bold" class="row text-center column text-white q-mb-md">BEM VINDO</div>
-        <div class="row text-center column text-white text-subtitle1 text-weight-bold">Sistema móvel de <br/> Geração de Demanada para a Circuncisão <br/>Masculina</div>
-    </div>
-   </q-card>
+      </div>
+      <div class="row q-pa-xl texte-center q-mt-lg column">
+        <div
+          style="font-family: 'Arial'; font-size: 40px; font-weight: bold"
+          class="row text-center column text-white q-mb-md"
+        >
+          BEM VINDO
+        </div>
+        <div
+          class="row text-center column text-white text-subtitle1 text-weight-bold"
+        >
+          Sistema móvel de <br />
+          Geração de Demanada para a Circuncisão <br />Masculina
+        </div>
+      </div>
+    </q-card>
 
     <div class="row q-mt-md text-center q-px-xl" v-if="!administration">
-        <q-tabs
-            v-model="tab"
-            dense
-            visible=false
-            class=" text-grey userTab col"
-            active-color="white"
-            indicator-color="primary"
-            active-bg-color="primary"
-            narrow-indicator
-            style="border-radius: 2em; border-style: solid;border-color: #EE764E;"
-            align="justify">
-            <q-tab  style="border-radius: 2em; border-style: solid; border-color: white;" name="mobilizer" icon="manage_accounts" label="Mobilizador" />
-            <q-tab style="border-radius: 2em; border-style: solid; border-color: white;" name="clinic" icon="local_hospital" label="Unidade Sanitária" />
-        </q-tabs>
+      <q-tabs
+        v-model="tab"
+        dense
+        visible="false"
+        class="text-grey userTab col"
+        active-color="white"
+        indicator-color="primary"
+        active-bg-color="primary"
+        narrow-indicator
+        style="border-radius: 2em; border-style: solid; border-color: #ee764e"
+        align="justify"
+      >
+        <q-tab
+          style="border-radius: 2em; border-style: solid; border-color: white"
+          name="mobilizer"
+          icon="manage_accounts"
+          label="Mobilizador"
+        />
+        <q-tab
+          style="border-radius: 2em; border-style: solid; border-color: white"
+          name="clinic"
+          icon="local_hospital"
+          label="Unidade Sanitária"
+        />
+      </q-tabs>
     </div>
     <form @submit.prevent="authUser">
-        <div class="q-pa-xl">
-            <div class="row q-mb-md">
-                <q-input
-                    class="col"
-                    ref="usernameRef"
-                    v-model="username"
-                    outlined
-                    type="text"
-                    :rules="[ val => val.length >= 3 || 'O nome do utilizador deve ter um minimo de 3 caracteres']"
-                    lazy-rules
-                    rounded
-                    label="Utilizador" >
-                    <template v-slot:append>
-                        <q-icon name="person"  color="primary"/>
-                    </template>
-                </q-input>
-            </div>
-            <div class="row q-mb-md">
-                <q-input
-                    v-model="password"
-                    rounded
-                    outlined
-                    class="col"
-                    label="Senha"
-                    :rules="[ val => val.length >= 4 || 'A senha deve ter um minimo de 4 caracteres']"
-                    ref="passwordRef"
-                    :type="isPwd ? 'password' : 'text'">
-                    <template v-slot:append>
-                        <q-icon
-                            :name="isPwd ? 'visibility_off' : 'visibility'"
-                            class="cursor-pointer"
-                            @click="isPwd = !isPwd"
-                            color="primary"
-                        />
-                    </template>
-                </q-input>
-            </div>
-            <div class="row">
-                <q-btn
-                    :loading="submitting"
-                    class="full-width q-py-sm"
-                    unelevated rounded
-                    color="primary"
-                    type="submit"
-                    label="Entrar" />
-            </div>
-            <div class="row q-py-lg float-right">
-            <span class="text-h7">Esqueceu as suas credenciais?
-                <q-btn flat style="color: #FF0080" color="primary" label="Clique aqui." no-caps/></span>
-            </div>
+      <div class="q-pa-xl">
+        <div class="row q-mb-md">
+          <q-input
+            class="col"
+            ref="usernameRef"
+            v-model="username"
+            outlined
+            type="text"
+            :rules="[
+              (val) =>
+                val.length >= 3 ||
+                'O nome do utilizador deve ter um minimo de 3 caracteres',
+            ]"
+            lazy-rules
+            rounded
+            label="Utilizador"
+          >
+            <template v-slot:append>
+              <q-icon name="person" color="primary" />
+            </template>
+          </q-input>
         </div>
+        <div class="row q-mb-md">
+          <q-input
+            v-model="password"
+            rounded
+            outlined
+            class="col"
+            label="Senha"
+            :rules="[
+              (val) =>
+                val.length >= 4 || 'A senha deve ter um minimo de 4 caracteres',
+            ]"
+            ref="passwordRef"
+            :type="isPwd ? 'password' : 'text'"
+          >
+            <template v-slot:append>
+              <q-icon
+                :name="isPwd ? 'visibility_off' : 'visibility'"
+                class="cursor-pointer"
+                @click="isPwd = !isPwd"
+                color="primary"
+              />
+            </template>
+          </q-input>
+        </div>
+        <div class="row">
+          <q-btn
+            :loading="submitting"
+            class="full-width q-py-sm"
+            unelevated
+            rounded
+            color="primary"
+            type="submit"
+            label="Entrar"
+          />
+        </div>
+        <div class="row q-py-lg float-right">
+          <span class="text-h7"
+            >Esqueceu as suas credenciais?
+            <q-btn
+              flat
+              style="color: #ff0080"
+              color="primary"
+              label="Clique aqui."
+              no-caps
+          /></span>
+        </div>
+      </div>
     </form>
   </q-page>
 </template>
 
 <script setup>
-import { ref, onMounted,computed } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useLoading } from 'src/composables/shared/loading/loading';
 import provinceService from '../../services/api/province/provinceService';
 import districtService from '../../services/api/district/districtService';
@@ -126,7 +189,7 @@ const init = async () => {
 };
 
 const provinces = computed(() => {
-    console.log('111pro'+provinceService.getAllProvinces())
+  console.log('111pro' + provinceService.getAllProvinces());
   return provinceService.getAllProvinces();
 });
 
@@ -135,14 +198,14 @@ const districts = computed(() => {
 });
 
 const getAllClinicsByDistrictId = async (districtId) => {
- return await clinicService.getAllClinicsByDistrictId(districtId);
-}
+  return await clinicService.getAllClinicsByDistrictId(districtId);
+};
 
 const addLocalDbClinics = async (districtId) => {
-   clinicService.getAllClinicsByDistrictId(districtId).then(resp => {
-     //  clinicService.get(0)
-   })
-}
+  clinicService.getAllClinicsByDistrictId(districtId).then((resp) => {
+    //  clinicService.get(0)
+  });
+};
 
 const addLocalDbDistricts =  () => {
    districtService.getWeb(0)
@@ -153,22 +216,22 @@ const addLocalDbProvince =  () => {
 }
 
 const addLocalDbDatas = (districtId) => {
-      addLocalDbClinics(districtId)
-     addLocalDbDistricts()
-    addLocalDbProvince()
-}
+  addLocalDbClinics(districtId);
+  addLocalDbDistricts();
+  addLocalDbProvince();
+};
 
 const setAdministrationScreen = () => {
-      if (administration.value === false) {
-        administration.value = true
-           labelAdmin.value = 'Utilização Normal'
-           tab.value = null
-           } else {
-                administration.value = false
-               labelAdmin.value = 'Administração'
-              tab.value= 'mobilizer'
-           }
-}
+  if (administration.value === false) {
+    administration.value = true;
+    labelAdmin.value = 'Utilização Normal';
+    tab.value = null;
+  } else {
+    administration.value = false;
+    labelAdmin.value = 'Administração';
+    tab.value = 'mobilizer';
+  }
+};
 
 const buildUserToAdd = (responseUser) => {
            const userLogin = {
@@ -191,14 +254,14 @@ const buildUserToAdd = (responseUser) => {
 }
 
 const checkOnline = () => {
-     isOnline().then(resp => {
-       if (resp === true) {
-          return true
-   } else if (resp === false) {
-         return false
-          }
-        })
-}
+  isOnline().then((resp) => {
+    if (resp === true) {
+      return true;
+    } else if (resp === false) {
+      return false;
+    }
+  });
+};
 
 
 const authUser = async () => {
@@ -354,7 +417,7 @@ const loginOffline = () => {
 </script>
 
 <style>
-    .userTab {
-        border: 1px solid gray-7;
-    }
+.userTab {
+  border: 1px solid gray-7;
+}
 </style>

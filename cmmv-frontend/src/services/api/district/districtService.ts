@@ -68,8 +68,7 @@ export default {
     return api()
       .patch('district/' + id, params)
       .then((resp) => {
-        district
-      .save(resp.data);
+        district.save(resp.data);
       });
   },
   deleteWeb(id: number) {
@@ -81,8 +80,7 @@ export default {
   },
   // Mobile
   putMobile(params: string) {
-    return nSQL(District
-    .entity)
+    return nSQL(District.entity)
       .query('upsert', params)
       .exec()
       .then((resp) => {
@@ -90,8 +88,7 @@ export default {
       });
   },
   getMobile() {
-    return nSQL(District
-    .entity)
+    return nSQL(District.entity)
       .query('select')
       .exec()
       .then((rows: any) => {
@@ -103,8 +100,7 @@ export default {
       });
   },
   deleteMobile(paramsId: string) {
-    return nSQL(District
-    .entity)
+    return nSQL(District.entity)
       .query('delete')
       .where(['id', '=', paramsId])
       .exec()
@@ -129,9 +125,12 @@ export default {
   },
 
   getAllByProvinceId(provinceId: number) {
-   return district.query().withAll().where('province_id', provinceId).get()
+    return district.query().withAll().where('province_id', provinceId).get();
   },
   getById(districtId: number) {
-    return district.query().withAll().whereId( districtId).first()
-   }
+    return district.query().withAll().whereId(districtId).first();
+  },
+  getDistrictByIdLogin(idLogin: any) {
+    return district.query().find(idLogin);
+  },
 };
