@@ -40,11 +40,12 @@ export default {
     }
   },
   // WEB
-  postWeb(params: string) {
-    return api()
+  async postWeb(params: string) {
+    return await api()
       .post('utente', params)
       .then((resp) => {
         utente.save(resp.data);
+        return resp
       });
   },
   getWeb(offset: number) {
@@ -69,6 +70,7 @@ export default {
       .then((resp) => {
         utente
       .save(resp.data);
+      return resp
       });
   },
   deleteWeb(id: number) {
@@ -104,6 +106,7 @@ export default {
       .query('upsert', params)
       .exec()
       .then((resp) => {
+        console.log(resp[0].affectedRows)
         utente.save(resp[0].affectedRows);
       });
   },
@@ -129,7 +132,24 @@ export default {
       .then(() => {
         utente
       .destroy(paramsId);
-        alertSucess('O Registo foi removido com sucesso');
+       
+      })
+      .catch((error: any) => {
+        // alertError('Aconteceu um erro inesperado nesta operação.');
+        console.log(error);
+      });
+  },
+
+  async getMobileUtenteToSend() {
+    return await nSQL(Utente
+    .entity)
+      .query('select')
+      .where([['syncStatus','=','P'],'OR',['syncStatus','=','U']])
+      .exec()
+      .then((rows: any) => {
+      //  utente.save(rows);
+      console.log(rows)
+      return rows;
       })
       .catch((error: any) => {
         // alertError('Aconteceu um erro inesperado nesta operação.');
@@ -166,26 +186,42 @@ export default {
   },
   getLocalUtentesAssociados() {
     return utente.query()
-    .with('clinic')
-    .with('clinic')
+    .with('clinic', (query) => {
+      query.with('district', (query) => {
+        query.with('province');
+      });
+    })
     .with('communityMobilizer')
     .with('appointments')
-    .with('appointments')
-    .with('addresses')
+    .with('addresses', (query) => {
+      query.with('district', (query) => {
+        query.with('province');
+      });
+    })
     .where('status', 'ASSOCIADO')
     .orderBy('firstNames')
     .get()
 },
 getLocalUtentesEnviados() {
   return utente.query()
-  .with('clinic')
-  .with('clinic')
+  .with('clinic', (query) => {
+    query.with('district', (query) => {
+      query.with('province');
+    });
+  })
   .with('communityMobilizer')
-  .with('appointments')
-  .with('appointments')
-  .with('appointments')
-  .with('addresses')
-  .with('addresses')
+  .with('appointments',(query) => {
+    query.with('clinic', (query) => {
+      query.with('district' , (query) => {
+        query.with('province');
+      });
+    });
+  })
+  .with('addresses', (query) => {
+    query.with('district', (query) => {
+      query.with('province');
+    });
+  })
   .where('status', 'ENVIADO')
   .orderBy('firstNames')
   .get()

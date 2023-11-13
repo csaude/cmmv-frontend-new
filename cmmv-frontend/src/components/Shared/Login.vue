@@ -156,9 +156,11 @@ import provinceService from '../../services/api/province/provinceService';
 import districtService from '../../services/api/district/districtService';
 import clinicService from '../../services/api/clinic/clinicService';
 import { useRouter } from 'vue-router';
-import UsersService from 'src/services/UsersService';
-import db from 'src/stores/localbase';
-import { Notify } from 'quasar';
+import usersService from 'src/services/UsersService';
+import db from 'src/stores/localbase'
+import bcrypt from 'bcryptjs';
+import { Notify } from 'quasar'
+import { useSystemUtils } from 'src/composables/shared/systemUtils/systemUtils';
 const isPwd = ref(true);
 const tab = ref('mobilizer');
 const username = ref('');
@@ -173,7 +175,7 @@ const { closeLoading, showloading } = useLoading();
 const usernameRef = ref(null);
 const passwordRef = ref(null);
 const router = useRouter();
-
+const { isMobile } = useSystemUtils();
 //OnMouted
 onMounted(() => {
   showloading();
@@ -205,13 +207,13 @@ const addLocalDbClinics = async (districtId) => {
   });
 };
 
-const addLocalDbDistricts = () => {
-  districtService.get(0);
-};
+const addLocalDbDistricts =  () => {
+   districtService.getWeb(0)
+}
 
-const addLocalDbProvince = () => {
-  provinceService.get(0);
-};
+const addLocalDbProvince =  () => {
+   provinceService.getWeb(0)
+}
 
 const addLocalDbDatas = (districtId) => {
   addLocalDbClinics(districtId);
@@ -232,21 +234,24 @@ const setAdministrationScreen = () => {
 };
 
 const buildUserToAdd = (responseUser) => {
-  console.log(responseUser.refresh_token);
-  UserLogin.localDbAdd({
-    id_token: responseUser.access_token,
-    orgaoId: responseUser.orgaoId,
-    refresh_token: responseUser.refresh_token,
-    username: responseUser.username,
-    password: responseUser.password,
-    idLogin: responseUser.mainEntity,
-    idUser: responseUser.id,
-    role: responseUser.roles,
-    clinicId: responseUser.clinicId,
-    districtId: responseUser.districtId,
-    source: responseUser.source,
-  });
-};
+           const userLogin = {
+               id: responseUser.id,
+               id_token: responseUser.access_token,
+                refresh_token: responseUser.refresh_token,
+                username: responseUser.username,
+                password: responseUser.password,
+                idLogin: responseUser.mainEntity,
+                mobilizer_id: responseUser.mainEntity,
+                clinic_id: responseUser.mainEntity,
+                role: responseUser.roles,
+                clinic_id: responseUser.clinicId,
+                district_id: responseUser.districtId,
+                source: responseUser.source
+           }
+           console.log(responseUser)
+           console.log(userLogin)
+            usersService.putMobile(userLogin)
+}
 
 const checkOnline = () => {
   isOnline().then((resp) => {
@@ -258,131 +263,58 @@ const checkOnline = () => {
   });
 };
 
-const authUser = () => {
+
+const authUser = async () => {
   usernameRef.value.validate();
   passwordRef.value.validate();
-  if (!usernameRef.value.hasError && !passwordRef.value.hasError) {
+  if (!passwordRef.value.hasError && !usernameRef.value.hasError) {
     submitting.value = true;
-    db.newDb()
-      .collection('users')
-      .get()
-      .then((users) => {
-        if (users.length > 0) {
-          const username = users[0].username;
-          const passwordLocal = users[0].password;
-          // const role = users[0].role
-          const match = bcrypt.compareSync(
-            password,
-            passwordLocal.substring(8)
-          );
-          if (username === username && match) {
-            isOnline().then((resp) => {
-              if (resp === true) {
-                UsersService.login({
-                  username: username.value,
-                  password: password.value,
-                }).then((response) => {
-                  localStorage.setItem('id_token', response.data.access_token);
-                  localStorage.setItem('idLogin', response.data.mainEntity);
-                  localStorage.setItem('idUser', response.data.id);
-                  localStorage.setItem('orgaoId', response.data.orgaoId);
-                  localStorage.setItem(
-                    'refresh_token',
-                    response.data.refresh_token
-                  );
-                  localStorage.setItem('username', response.data.username);
-                  localStorage.setItem('password', response.data.password);
-                  localStorage.setItem('role', response.data.roles);
-                  localStorage.setItem('clinicId', response.data.clinicId);
-                  localStorage.setItem('districtId', response.data.districtId);
-                  localStorage.setItem('source', response.data.source);
-                });
-                return true;
-              }
-            });
-            verifiyRoleAndUser(users);
-          } else {
-            /*
-                        Notify.create({
-                        icon: 'announcement',
-                        message: 'Utilizador ou a senha invalida',
-                        type: 'negative',
-                        progress: true,
-                        timeout: 3000,
-                        position: 'top',
-                        color: 'negative',
-                        textColor: 'white',
-                        classes: 'glossy'
-                })
-                */
-            submitting.value = false;
-          }
-        } else {
-          UsersService.login({
-            username: username.value,
-            password: password.value,
-          })
-            .then((response) => {
-              submitting.value = false;
-              localStorage.setItem('id_token', response.data.access_token);
-              localStorage.setItem('idLogin', response.data.mainEntity);
-              localStorage.setItem('idUser', response.data.id);
-              localStorage.setItem('orgaoId', response.data.orgaoId);
-              localStorage.setItem(
-                'refresh_token',
-                response.data.refresh_token
-              );
-              localStorage.setItem('username', response.data.username);
-              localStorage.setItem('password', response.data.password);
-              localStorage.setItem('role', response.data.roles);
-              localStorage.setItem('clinicId', response.data.clinicId);
-              localStorage.setItem('districtId', response.data.districtId);
-              localStorage.setItem('source', response.data.source);
-              if (
-                tab.value === 'mobilizer' &&
-                response.data.roles.includes('ROLE_MOBILIZER')
-              ) {
-                addLocalDbDatas(response.data.districtId);
-                // buildUserToAdd(response.data)
-                localStorage.setItem(
-                  'id_mobilizer',
-                  localStorage.getItem('idLogin')
-                );
-                router.push({
-                  path: '/mobilizerHome/' + localStorage.getItem('idLogin'),
-                });
-                //    router.push('/mobilizerHome/1');
-              } else if (
-                tab.value === 'clinic' &&
-                response.data.roles.includes('ROLE_USER')
-              ) {
-                localStorage.setItem(
-                  'id_clinicUser',
-                  localStorage.getItem('idLogin')
-                );
-                // const clinic = Clinic.query().has('code').where('id', response.data.clinicId).first()
-                // Clinic.localDbAdd(clinic)
-                //    buildUserToAdd(response);
-                addLocalDbDatas(response.districtId);
-                router.push({
-                  path: '/clinicHome/' + localStorage.getItem('idLogin'),
-                });
-              } else if (
-                tab.value === null &&
-                response.data.roles[0] === 'ROLE_ADMIN'
-              ) {
-                //  buildUserToAdd(response.data)
-                localStorage.setItem('id_clinicUser', 1);
-                router.push({ path: '/clinicHome/' + 1 });
-              } else if (
-                tab.value === null &&
-                response.data.roles[0] === 'ROLE_USER_DISTRICT'
-              ) {
-                //  buildUserToAdd(response.data)
-                // localStorage.setItem('id_districtUser', response.data.idLogin)
-                router.push({ path: '/clinicHome/' + 1 });
-              } else {
-                /*
+      const users = await usersService.getMobile();
+      if (users.length === 0) {
+        loginOnline();
+      } else {
+        loginOffline();
+      }
+    }
+  };
+
+const loginOnline =  () => {
+    usersService.login({ username: username.value,
+                         password: password.value
+                            }).then((response) => {
+                                submitting.value = false
+                    localStorage.setItem('id_token', response.data.access_token)
+                    localStorage.setItem('idLogin', response.data.mainEntity)
+                    localStorage.setItem('idUser', response.data.id)
+                    localStorage.setItem('orgaoId', response.data.orgaoId)
+                    localStorage.setItem('refresh_token',response.data.refresh_token)
+                    localStorage.setItem('username', response.data.username)
+                    localStorage.setItem('password', response.data.password)
+                    localStorage.setItem('role', response.data.roles)
+                    localStorage.setItem('clinicId', response.data.clinicId)
+                    localStorage.setItem('districtId', response.data.districtId)
+                    localStorage.setItem('source', response.data.source)
+                    if (tab.value === 'mobilizer' && response.data.roles.includes('ROLE_MOBILIZER')) {
+                       addLocalDbDatas(response.data.districtId)
+                        buildUserToAdd(response.data)
+                        localStorage.setItem('id_mobilizer', localStorage.getItem('idLogin'))
+                       router.push({ path: '/mobilizerHome/' + localStorage.getItem('idLogin') })
+                    } else if (tab.value === 'clinic' && response.data.roles.includes('ROLE_USER')) {
+                        localStorage.setItem('id_clinicUser', localStorage.getItem('idLogin'))
+                       // const clinic = Clinic.query().has('code').where('id', response.data.clinicId).first()
+                       // Clinic.localDbAdd(clinic)
+                        buildUserToAdd(response.data)
+                        addLocalDbDatas(response.data.districtId)
+                       router.push({ path: '/clinicHome/' + localStorage.getItem('idLogin') })
+                        } else if (tab.value === null && response.data.roles[0] === 'ROLE_ADMIN') {
+                            buildUserToAdd(response.data)
+                            localStorage.setItem('id_clinicUser', 1)
+                            router.push({ path: '/clinicHome/' + 1 })
+                        } else if (tab.value === null && response.data.roles[0] === 'ROLE_USER_DISTRICT') {
+                            buildUserToAdd(response.data)
+                            localStorage.setItem('id_districtUser', response.data.idLogin)
+                           router.push({ path: '/clinicHome/' + 1 })
+                        } else {
                                 Notify.create({
                                     icon: 'announcement',
                                     message: 'Utilizador sem acesso',
@@ -394,38 +326,80 @@ const authUser = () => {
                                     textColor: 'white',
                                     classes: 'glossy'
                                 })
-                                */
-                submitting.value = false;
-              }
-            })
-            .catch((error) => {
-              console.log(error);
-              submitting.value = false;
-              if (error.request.response != null) {
-                const arrayErrors = JSON.parse(error.request.response);
-                if (arrayErrors.total == null) {
-                  listErrors.push(arrayErrors.message);
-                } else {
-                  arrayErrors._embedded.errors.forEach((element) => {
-                    listErrors.push(element.message);
-                  });
+                submitting.value = false
                 }
-                console.log(listErrors);
-              }
-            });
-        }
-      });
+                }).catch(error => {
+                    console.log(error)
+                    submitting.value = false
+                    if (error.request.response != null) {
+                        const arrayErrors = JSON.parse(error.request.response)
+                        if (arrayErrors.total == null) {
+                        listErrors.push(arrayErrors.message)
+                        } else {
+                        arrayErrors._embedded.errors.forEach(element => {
+                            listErrors.push(element.message)
+                        })
+                        }
+                        console.log(listErrors)
+                    }
+                })
+}
+
+const loginOffline = () => {
+  const userLoged = usersService.getUserByUserName(username.value);
+  if (
+    userLoged.username === username.value &&
+    bcrypt.compareSync(password.value, userLoged.password.substring(8))
+  ) {
+    localStorage.setItem('username', userLoged.username);
+    localStorage.setItem('user', userLoged.username);
+    /*
+       isOnline().then(resp => {
+           if (resp === true) {
+                             usersService.login({
+                                username: this.username,
+                                password: this.password
+                            }).then((response) => {
+                                localStorage.setItem('id_token', response.data.access_token)
+                                localStorage.setItem('idLogin', response.data.mainEntity)
+                                localStorage.setItem('idUser', response.data.id)
+                                localStorage.setItem('orgaoId', response.data.orgaoId)
+                                localStorage.setItem('refresh_token',response.data.refresh_token)
+                                localStorage.setItem('username', response.data.username)
+                                localStorage.setItem('password', response.data.password)
+                                localStorage.setItem('role', response.data.roles)
+                                localStorage.setItem('clinicId', response.data.clinicId)
+                                localStorage.setItem('districtId', response.data.districtId)
+                                localStorage.setItem('source', response.data.source)
+                              })
+                           return true
+                      }
+                    })
+                    */
+       verifiyRoleAndUser(userLoged)
+  } else {
+    Notify.create({
+      icon: 'announcement',
+      message: 'Utilizador ou a senha inválida',
+      type: 'negative',
+      progress: true,
+      timeout: 3000,
+      position: 'top',
+      color: 'negative',
+      textColor: 'white',
+      classes: 'glossy',
+    });
+    submitting.value = false;
   }
 };
 
-const verifiyRoleAndUser = (users) => {
-  if (users[0].role.includes('ROLE_MOBILIZER') && tab.value === 'mobilizer') {
-    localStorage.setItem('id_mobilizer', users[0].idLogin);
-    router.push({ path: '/mobilizerHome/' + users[0].idLogin });
-  } else if (users[0].role.includes('ROLE_USER') && tab.value === 'clinic') {
-    router.push({ path: '/clinicHome/' + localStorage.getItem('idLogin') });
-  } else {
-    /*
+ const verifiyRoleAndUser = (user) => {
+       if (user.role.includes('ROLE_MOBILIZER') && tab.value === 'mobilizer') {
+             localStorage.setItem('id_mobilizer', user.mobilizer_id)
+             router.push({ path: '/mobilizerHome/' + user.mobilizer_id })
+               } else if (user.role.includes('ROLE_USER') && tab.value === 'clinic') {
+                     router.push({ path: '/clinicHome/' + localStorage.getItem('idLogin') })
+               } else {
                    Notify.create({
                         icon: 'announcement',
                         message: 'Utilizador sem acesso',
@@ -437,10 +411,9 @@ const verifiyRoleAndUser = (users) => {
                         textColor: 'white',
                         classes: 'glossy'
                     })
-                    */
-    submitting.value = false;
-  }
-};
+           submitting.value = false
+          }
+        }
 </script>
 
 <style>

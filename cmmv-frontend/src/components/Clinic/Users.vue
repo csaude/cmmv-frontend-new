@@ -45,7 +45,7 @@
             <q-btn size="xl" fab icon="add" @click="addUser" no-cap color="primary" />
           </q-page-sticky>
         </div>
-    <!--q-table title="Unidade Sanitária" :data="this.clinicos" :columns="columns" row-key="name" binary-state-sort :filter="filter">
+    <!--q-table title="Unidade Sanitária" :data="clinicos" :columns="columns" row-key="name" binary-state-sort :filter="filter">
       <template v-slot:top-right>
       <q-input v-if="show_filter" filled borderless dense debounce="300" v-model="filter" placeholder="Pesquisa">
               <template v-slot:append>
@@ -68,9 +68,11 @@
         <form @submit.prevent="validateUser" >
             <q-card-section class="q-px-md">
              <div class="row q-mt-md">
-                <input-text-field
-                    ref="nome"
+                <q-input
+                    ref="nomeRef"
+                    dense
                     square
+                   outlined
                     v-model="user.firstNames"
                     :rules="[ val => val.length >= 3 || 'O nome indicado é inválido']"
                     lazy-rules
@@ -78,19 +80,23 @@
                     label="Nome" />
             </div>
             <div class="row">
-                <input-text-field
+                <q-input
                     class="col"
-                    ref="apelido"
+                    ref="apelidoRef"
+                    dense
                     square
+                   outlined
                     v-model="user.lastNames"
                     :rules="[ val => val.length >= 2 || 'O apelido indicado é inválido']"
                     lazy-rules
                     label="Apelido" />
             </div>
              <div class="row q-mt-md">
-                <input-text-field
-                    ref="username"
+                <q-input
+                    ref="usernameRef"
+                    dense
                     square
+                   outlined
                     v-model="user.username"
                     :rules="[ val => val.length >= 3 || 'O nome do utilizador indicado é inválido']"
                     lazy-rules
@@ -107,7 +113,7 @@
                      class="col"
                     label="Senha"
                     :rules="[ val => val.length >= 4 || 'A senha deve ter um minimo de 4 caracteres']"
-                    ref="password"
+                    ref="passwordRef"
                     :type="isPwd ? 'password' : 'text'">
                     <template v-slot:append>
                         <q-icon
@@ -127,7 +133,7 @@
                     :options="userRoles"
                     transition-show="flip-up"
                     transition-hide="flip-down"
-                    ref="role"
+                    ref="roleRef"
                     :rules="[ val => ( val != null ) || ' Por favor indique o role do utilizador']"
                     lazy-rules
                     label="Perfil *" />
@@ -140,7 +146,7 @@
                       v-model="province"
                     transition-show="flip-up"
                     transition-hide="flip-down"
-                    ref="province"
+                    ref="provinceRef"
                     :disable="disableFields"
                     option-value="id"
                     option-label="description"
@@ -156,7 +162,7 @@
                     transition-hide="flip-down"
                     v-model="district"
                     :options="districts"
-                    ref="district"
+                    ref="districtRef"
                     :disable="disableFields"
                     option-value="id"
                     option-label="description"
@@ -164,7 +170,7 @@
                     lazy-rules
                     label="Distrito" />
             </div>
-         <div class="row q-mb-md" v-if="this.isRoleAdm === true">
+         <div class="row q-mb-md" v-if="isRoleAdm === true">
                    <q-select
                     dense outlined
                     class="col"
@@ -182,7 +188,7 @@
             </q-card-section>
            <q-card-actions align="right" class="q-mb-md">
                 <q-btn label="Cancelar" color="primary" @click="show_dialog = false"/>
-                <q-btn type="submit" :loading="this.submitting" label="Submeter" color="primary" />
+                <q-btn type="submit" :loading="submitting" label="Submeter" color="primary" />
             </q-card-actions>
         </form>
     </q-card>
@@ -198,257 +204,212 @@
         </div>
      </q-dialog>
 </template>
-<script>
-// import CommunityMobilizer from '../../store/models/mobilizer/CommunityMobilizer'
-import Province from 'src/store/models/province/Province'
-import { UserLogin, DistrictUserLogin } from 'src/store/models/userLogin/UserLoginHierarchy'
-import District from 'src/store/models/district/District'
-import Clinic from 'src/store/models/clinic/Clinic'
-// import UsersService from '../../services/UsersService'
+<script setup>
+import usersService from 'src/services/UsersService'
+import provinceService from 'src/services/api/province/provinceService'
+import { useLoading } from 'src/composables/shared/loading/loading';
+import { useSwal } from 'src/composables/shared/dialog/dialog';
 import { ref } from 'vue'
-import { QSpinnerIos } from 'quasar'
-export default {
-    data () {
-        // const $q = useQuasar()
-        const filter = ref('')
-        return {
-            user: new UserLogin(),
-            userDistrict: new DistrictUserLogin(),
-        /*    user: {
-                firstNames: '',
-                lastNames: '',
-                fullName: '',
-                password: '',
-                role: '',
-                clinic: null,
-            }, */
-            isPwd: ref(true),
-            province: null,
-            show_dialog: false,
-            show_error_dialog: false,
-            editMode: false,
-            submitting: false,
-            listErrors: [],
-            district: '',
-            disableFields: ref(false),
-            hideFields: ref(false),
-            initialDistrict: 0,
-             filter,
-           // isRole: ref(false),
-            // clinic: '',
-            columns: [
+
+const { alertSucess, alertError, alertInfo } = useSwal();
+const { closeLoading, showloading } = useLoading();
+const columns = [
                 { name: 'fullName', align: 'left', label: 'Nome Completo', field: row => row.fullName, format: val => `${val}`, sortable: true },
                 { name: 'username', align: 'left', label: 'Utilizador', field: row => row.username, format: val => `${val}`, sortable: true }
           //      { name: 'actions', label: 'Opções', field: 'actions' }
-            ],
-            userRoles: [
-             'Utilizador na US', 'Administrador Distrital'
             ]
-        }
-    },
-     mounted () {
-      //  const provinceOffset = 0
-      //  this.getAllProvinces(provinceOffset)
-      // this.showLoading()
-     if (localStorage.getItem('role') === 'ROLE_ADMIN') {
-       UserLogin.apiGetAll()
+
+
+const user = new UserLogin();
+const userDistrict = new DistrictUserLogin();
+
+const nomeRef = ref(null);
+const apelidoRef = ref(null);
+const passwordRef = ref(null);
+const provinceRef = ref(null);
+const districtRef = ref(null);
+const roleRef = ref(null);
+const usernameRef = ref(null);
+
+const isPwd = ref(true)
+const province = ref(null)
+const district = ref(null)
+const show_dialog = ref(null)
+const show_error_dialog = ref(false)
+const editMode =  ref(false)
+const submitting =  ref(false)
+const listErrors = ref([])
+const disableFields = ref(false)
+const hideFields = ref(false)
+const initialDistrict = ref(0)
+const filter = ref('')
+const userRoles = ref( [
+             'Utilizador na US', 'Administrador Distrital'
+            ])
+
+
+ onMounted(() => {
+  showloading();
+  getAllProvinces()
+  if (localStorage.getItem('role') === 'ROLE_ADMIN') {
+       UsersService.apiGetAll()
      } else if (localStorage.getItem('role') === 'ROLE_USER') {
-       this.getAllUsersByClinicId(localStorage.getItem('id_clinicUser'))
+      usersService.getAllUsersByClinicId(localStorage.getItem('id_clinicUser'))
      } else if (localStorage.getItem('role') === 'ROLE_USER_DISTRICT') {
-       this.getAllUsersByDistrictId(localStorage.getItem('idLogin'))
+      usersService.getAllUsersByDistrictId(localStorage.getItem('idLogin'))
      }
-    },
-    computed: {
-          provinces () {
-            return Province.query().orderBy('code').has('code').get()
-        },
-        districts () {
-        if (this.province !== null) {
-            return District.query().has('code').withAll().where('province_id', this.province.id).get()
-        } else {
-            return null
-        }
-        },
-        displayClinics () {
-   /*  if (this.district !== null) {
-            return Clinic.query().with('province')
-                   .with('district.province').has('code').where('district_id', this.district.id).get()
-        } else {
-            return null
-        } */
-         if (this.district != null) {
-          return this.getClinicsByDistrictId()
+});
+
+const provinces =  computed(() => {
+  return provinceService.getAllProvinces();
+});
+
+
+const districts =  computed(() => {
+  if (province.value !== null) {
+  return districtService.getAllByProvinceId(province.value.id);
+    } else {
+        return null
+    }
+});
+
+const displayClinics =  computed(() => {
+  if (district.value != null) {
+          return getClinicsByDistrictId()
            } else {
              return []
            }
-        },
-        users () {
-            return UserLogin.all()
-        },
-        isRoleAdm () {
-          if (this.user.role === 'Utilizador na US' && localStorage.getItem('role') !== 'ROLE_USER') {
+});
+
+
+const isRoleAdm = computed(() => {
+  if (user.role === 'Utilizador na US' && localStorage.getItem('role') !== 'ROLE_USER') {
             return true
-          }
+     }
           return false
-        }
-    },
-    created () {
-    //    this.mobilizer.clinic = Object.assign({}, this.clinic)
-      this.showLoading()
-    },
-    methods: {
-        async getAllUsersByClinicId (clinicId) {
-           await UserLogin.api().get('/userLogin/clinic/' + clinicId).then(resp => {
-                console.log(resp.response.data)
-            }).catch(error => {
-                console.log(error)
-            })
-        },
-         async getAllUsersByDistrictId (districtId) {
-           await UserLogin.api().get('/districtUserLogin/district/' + districtId).then(resp => {
-                console.log(resp.response.data)
-            }).catch(error => {
-                console.log(error)
-            })
-        },
-         async getAllClinicsByDistrictId (districtId) {
-           await Clinic.api().get('/clinic/district/' + districtId).then(resp => {
-              console.log(resp.response.data)
-            }).catch(error => {
-                console.log(error)
-            })
-    },
-     getClinicsByDistrictId () {
-            if (this.district != null && this.initialDistrict !== this.district.id) {
-               this.$q.loading.show({
-          spinner: QSpinnerIos,
-          message: 'Carregando Unidades Sanitarias. Por favor, aguarde...'
-        })
-              this.initialDistrict = this.district.id
-              this.getAllClinicsByDistrictId(this.district.id).then(resp => {
-                  this.$q.loading.hide()
-              })
-            }
-              return Clinic.query().with('province').with('district')
-                   .with('district.province').where('district_id', parseInt(this.district.id)).get()
-        },
-     validateUser () {
-         this.$refs.role.validate()
-        this.$refs.nome.$refs.ref.validate()
-        this.$refs.apelido.$refs.ref.validate()
-        this.$refs.password.validate()
-         this.$refs.province.validate()
-         this.$refs.username.$refs.ref.validate()
-        this.$refs.district.validate()
-        if (!this.$refs.nome.$refs.ref.hasError && !this.$refs.apelido.$refs.ref.hasError &&
-            !this.$refs.password.hasError && !this.$refs.username.$refs.ref.hasError &&
-            !this.$refs.role.hasError && !this.$refs.province.hasError &&
-            !this.$refs.district.hasError) {
-            this.submitUser()
-        }
-     },
-        submitUser () {
-           this.submitting = true
-           this.listErrors = []
-       //   this.user.username = this.user.firstNames.substring(0, 1) + this.user.lastNames.trim()
-           this.user.fullName = this.user.firstNames + ' ' + this.user.lastNames
-            if (this.user.role === 'Administrador Distrital') {
-            //  this.user = DistrictLogin()
-               this.userDistrict = Object.assign({}, this.user)
-             this.userDistrict.province = this.province
-              this.userDistrict.district = this.district
-            }
-             UserLogin.api().post(this.getStringUserType(), this.getObjectToSend()).then(resp => {
-              console.log(resp.response.data)
-              this.show_dialog = false
-              this.submitting = false
-              this.$emit('update:show_dialog', false)
-              this.$q.notify({
-              message: 'Utilizador registrado com sucesso.',
-              color: 'teal'
-          })
-            }).catch(error => {
-            this.submitting = false
-            this.show_error_dialog = true
-            console.log(error)
-            if (error.request.status !== 0) {
-            const arrayErrors = JSON.parse(error.request.response)
-            if (arrayErrors.total == null) {
-              this.listErrors.push(arrayErrors.message)
-            } else {
-              arrayErrors._embedded.errors.forEach(element => {
-                this.listErrors.push(element.message)
-              })
-            }
-            console.log(this.listErrors)
-            }
-            })
-        },
-          addUser () {
-            this.user = new UserLogin()
-            this.province = null
-            this.district = null
-         if (localStorage.getItem('role') === 'ROLE_USER_DISTRICT') {
-      this.user.role = 'Utilizador na US'
-      this.district = District.query().with('province').find(localStorage.getItem('idLogin'))
-        this.province = this.district.province
-        this.disableFields = true
-          this.hideFields = true
-     } else if (localStorage.getItem('role') === 'ROLE_USER') {
-       this.user.role = 'Utilizador na US'
-         this.user.clinic = Clinic.query().with('province').with('district.province').find(localStorage.getItem('id_clinicUser'))
-          this.province = this.user.clinic.district.province
-       this.district = this.user.clinic.district
-        this.disableFields = true
-        this.hideFields = true
-     }
-         // this.user.role = 'Utilizador Clinica'
-         this.show_dialog = true
-      },
-       editUser (user) {
-      this.editedIndex = 0
-      this.user = Object.assign({}, user)
-    //  this.newClinic.province = Province.query().withAll().find(clinic.province_id)
-    //  this.newClinic.district = District.query().withAll().find(clinic.district_id)
-      this.show_dialog = true
-    },
-    getStringUserType () {
-     if (this.user.role === 'Utilizador na US') {
-       return '/userLogin'
-     } else if (this.user.role === 'Administrador Distrital') {
-        return '/districtUserLogin'
-     } else if (this.user.role === 'Mobilizador') {
-        return '/mobilizerLogin'
-     }
-    },
-     getObjectToSend () {
-       if (this.user.role === 'Utilizador na US') {
-       return this.user
-     } else if (this.user.role === 'Administrador Distrital') {
-        return this.userDistrict
-     } else if (this.user.role === 'Mobilizador') {
-        return '/mobilizerLogin'
-     }
-    },
-       showLoading () {
-        this.$q.loading.show({
-          spinner: QSpinnerIos,
-          message: 'Por favor, aguarde...'
-     })
-        // hiding in 2s
-        this.timer = setTimeout(() => {
-         this.$q.loading.hide()
-          this.timer = void 0
-        }, 2000)
-      }
-    },
-    components: {
-          'input-text-field': require('components/Shared/InputFieldText.vue').default
-    }
+});
 
+const users = computed(() => {
+  return UserLogin.getAllUsers()
+});
+
+const getClinicsByDistrictId = async () => {
+            if (district.value != null && initialDistrict.value !== district.value.id) {
+              showloading()
+              initialDistrict.value = district.value.id
+           await  getAllClinicsByDistrictId(district.value.id).then(resp => {
+              closeLoading()
+              })
+            }
+            return clinicService.getLocalClinicsByDistrictId(district.value.id)
+        }
+
+
+const getAllUsersByClinicId = async (clinicId) => {
+return await usersService.getAllUsersByClinicId(clinicId)
 }
-</script>
 
+const getAllUsersByDistrictId = async (districtId) => {
+return await usersService.getAllUsersByDistrictId(districtId)
+}
+
+const getAllClinicsByDistrictId = async (districtId) => {
+  return await getClinicsByDistrictId(districtId)
+}
+
+const validateUser = () => {
+  nomeRef.value.validate();
+  apelidoRef.value.validate();
+  roleRef.value.validate();
+  usernameRef.value.validate();
+  passwordRef.value.validate();
+  provinceRef.value.validate();
+  districtRef.value.validate();
+
+  if (
+    !nomeRef.value.hasError &&
+    !apelidoRef.value.hasError &&
+    !provinceRef.value.hasError &&
+    !roleRef.value.hasError &&
+    !districtRef.value.hasError &&
+    !passwordRef.value.hasError &&
+    !usernameRef.value.hasError
+  ) {
+            submitUser()
+        }
+}
+
+const submitUser = () => {
+           submitting.value = true
+          listErrors.value = []
+           user.value.fullName = user.firstNames + ' ' + user.lastNames
+            if (user.role === 'Administrador Distrital') {
+            //  user = DistrictLogin()
+               userDistrict = Object.assign({}, user)
+             userDistrict.province = province
+              userDistrict.district = district
+            }
+            usersService.apiPost(getStringUserType(), getObjectToSend()).then(resp => {
+              console.log(resp.response.data)
+              show_dialog.value = false
+              submitting.value = false
+             // $emit('update:show_dialog', false)
+          alertSucess('Utilizador registrado com sucesso.')
+            })
+        }
+  
+const addUser = () => {
+  user = new UserLogin()
+            province.value = null
+            district.value = null
+         if (localStorage.getItem('role') === 'ROLE_USER_DISTRICT') {
+      user.role = 'Utilizador na US'
+      district.value = District.query().with('province').find(localStorage.getItem('idLogin'))
+        province.value = district.value.province
+        disableFields.value = true
+          hideFields.value = true
+     } else if (localStorage.getItem('role') === 'ROLE_USER') {
+       user.role = 'Utilizador na US'
+         user.clinic = Clinic.query().with('province').with('district.province').find(localStorage.getItem('id_clinicUser'))
+          province.value = user.clinic.district.province
+       district.value = user.clinic.district
+        disableFields.value = true
+        hideFields.value = true
+     }
+         // user.role = 'Utilizador Clinica'
+         show_dialog.value = true
+}
+
+const editUser = (user) => {
+  editedIndex.value = 0
+      user.value = Object.assign({}, user.value)
+    //  newClinic.province = Province.query().withAll().find(clinic.province_id)
+    //  newClinic.district = District.query().withAll().find(clinic.district_id)
+      show_dialog.value = true
+}
+
+const getStringUserType = (user) => {
+  if (user.value.role === 'Utilizador na US') {
+       return '/userLogin'
+     } else if (user.value.role === 'Administrador Distrital') {
+        return '/districtUserLogin'
+     } else if (user.value.role === 'Mobilizador') {
+        return '/mobilizerLogin'
+     }
+}
+
+const getObjectToSend = (user) => {
+  if (user.value.role === 'Utilizador na US') {
+       return user
+     } else if (user.value.role === 'Administrador Distrital') {
+        return userDistrict
+     } else if (user.role === 'Mobilizador') {
+        return '/mobilizerLogin'
+     }
+}
+
+
+</script>
 <style>
     .fild-radius {
         border-radius: 5px;

@@ -1,11 +1,13 @@
 // import UsersService from '../services/UsersService'
-import Utente from 'src/stores/models/utente/Utente';
-import db from 'src/stores/localbase';
-import CommunityMobilizer from 'src/stores/models/mobilizer/CommunityMobilizer';
-import Appointment from 'src/stores/models/appointment/Appointment';
-import Address from 'src/stores/models/address/Address';
-import { UserLogin } from 'src/stores/models/userLogin/UserLoginHierarchy';
-import { Notify } from 'quasar';
+import Utente from 'src/stores/models/utente/Utente'
+import utenteService from './api/utente/UtenteService'
+// import db from 'src/store/localbase'
+import CommunityMobilizer from 'src/stores/models/mobilizer/CommunityMobilizer'
+import communityMobilizerService from './api/mobilizer/CommunityMobilizerService'
+import Appointment from 'src/stores/models/appointment/Appointment'
+import Address from 'src/stores/models/address/Address'
+import { UserLogin } from 'src/stores/models/userLogin/UserLoginHierarchy'
+import { Notify } from 'quasar'
 export default {
   sendUtentes() {
     this.doSend(0);

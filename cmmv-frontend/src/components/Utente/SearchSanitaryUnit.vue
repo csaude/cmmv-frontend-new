@@ -246,14 +246,14 @@ onMounted(() => {
 
 const associar = async () => {
    const newDate = new Date(appointment.value.appointmentDate, 'DD-MM-YYYY')
-             relatedUtente.value.clinic = link
+             relatedUtente.value.clinic = link.value
              relatedUtente.value.status = 'ENVIADO'
             if ( relatedUtente.value.syncStatus === 'S' ||  relatedUtente.value.syncStatus === 'U' ||  relatedUtente.value.syncStatus === null) {
                    relatedUtente.value.syncStatus = 'U'
              } else {
                    relatedUtente.value.syncStatus = 'P'
              }
-         //    appointment.value.id = uuidv4()
+             appointment.value.id = uuidv4()
              appointment.value.clinic = link.value
              appointment.value.status = 'PENDENTE'
              appointment.value.hasHappened = false
@@ -261,18 +261,16 @@ const associar = async () => {
              appointment.value.visitDate = null
              appointment.value.appointmentDate = moment(appointment.value.appointmentDate, 'DD-MM-YYYY').format('YYYY-MM-DD')
              appointment.value.time = newDate.getHours() + ':' + newDate.getMinutes()
-             appointment.value.utente = utente.value
+             appointment.value.utente = {}
              appointment.value.utente.id =  utente.value.id
-             /*
-          const appointmentLocalBase = JSON.parse(JSON.stringify(appointment))
-           relatedUtente.value.appointments.push(appointmentLocalBase)
-          const relatedUtenteLocalBase = JSON.parse(JSON.stringify(relatedUtente))
-          Appointment.localDbAdd(appointmentLocalBase)
-          Utente.localDbUpdate(relatedUtenteLocalBase)
-          Appointment.insert({ data: appointment })
-          */
+             appointment.value.utente_id = utente.value.id
+             const appointmentLocalBase = JSON.parse(JSON.stringify(appointment.value))
+             relatedUtente.value.appointments.push(appointmentLocalBase)
+             const relatedUtenteLocalBase = JSON.parse(JSON.stringify(relatedUtente.value))
+             appointmentService.putMobile(appointmentLocalBase)
+             utenteService.putMobile(relatedUtenteLocalBase)
+          
          console.log(appointment.value)
-         appointmentService.post(appointment.value)
           submitting.value = false
           closeRegistration(false)
          // $emit('update:utente', relatedUtente)

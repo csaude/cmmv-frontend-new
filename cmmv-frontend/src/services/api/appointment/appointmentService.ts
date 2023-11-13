@@ -134,6 +134,42 @@ export default {
         console.log(error);
       });
   },
+  apiGetAppointmentsByClinicId (clinicId:number){
+  return api().get('/appointment/clinic/' + clinicId).then(resp => {
+      appointment.save(resp.data);
+      return resp;
+    })
+  },
+  async getFromMobileById (id:number){
+    return await nSQL(Appointment
+      .entity)
+        .query('select')
+        .where(['id','=',id])
+        .exec()
+        .then((rows: any) => {
+        console.log(rows)
+        return rows[0];
+        })
+        .catch((error: any) => {
+          // alertError('Aconteceu um erro inesperado nesta operação.');
+          console.log(error);
+        });
+    },
+    async getAppointmentToSendFromMobile(){
+      return await nSQL(Appointment
+        .entity)
+          .query('select')
+          .where(appointment => ((appointment.status = 25 && appointment.syncStatus != 'S') ||
+          (appointment.hasHappened && appointment.syncStatus !== 'S')))
+          .exec()
+          .then((rows: any) => {
+          console.log(rows)
+          return rows;
+          })
+          .catch((error: any) => {
+            console.log(error);
+          });
+      },
   // Local Storage Pinia
   newInstanceEntity() {
     return appointment.getModel().$newInstance();
@@ -144,7 +180,9 @@ export default {
   deleteAllFromStorage() {
     appointment.flush();
   },
-
+  getAppointmentByUtenteId(utenteId:number) {
+    return appointment.query().where('utente_id', utenteId).first()
+  }
   getPendingAssignment(searchText: string) {
     if (searchText.length === 0) {
       return appointment

@@ -49,43 +49,4 @@ export default class Utente extends Model {
     return this.firstnames + ' ' + this.lastname
   }
 
-  static async apiSave (utente) {
-    return await this.api().post('/utente', utente)
-  }
-
-  static async apiUpdate (utente) {
-    return await this.api().patch('/utente/' + utente.id, utente)
-  }
-
-  static localDbAdd (utente) {
-    return db.newDb().collection('utentes').add(utente)
-  }
-
-  static localDbGetById (id) {
-    return db.newDb().collection('utentes').doc({ id: id }).get()
-  }
-
-  static localDbGetAll () {
-    return db.newDb().collection('utentes').get()
-  }
-
-  static localDbUpdate (utente) {
-    return db.newDb().collection('utentes').doc({ id: utente.id }).set(utente)
-  }
-
-  static localDbUpdateAll (utentes) {
-    return db.newDb().collection('utentes').set(utentes)
-  }
-
-  static localDbDelete (utente) {
-    return db.newDb().collection('utentes').doc({ id: utente.id }).delete()
-  }
-
-  static localDbDeleteAll () {
-    return db.newDb().collection('utentes').delete()
-  }
-
-  static localDbAddWithKey (utente) {
-    return db.newDb().collection('utentes').add(utente, utente.id)
-  }
 }
