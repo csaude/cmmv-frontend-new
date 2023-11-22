@@ -94,13 +94,15 @@
 
 <script setup>
 import { date } from 'quasar';
-import Appointment from 'src/stores/models/appointment/Appointment';
-import { ref } from 'vue';
+import { onBeforeMount, ref  } from 'vue';
 import moment from 'moment';
-import db from 'src/stores/localbase';
+import { useQuasar } from 'quasar'
+import appointmentService from 'src/services/api/appointment/appointmentService';
+
 
 const props = defineProps(['appointment']);
 const editedAppointment = ref({});
+const $q = useQuasar()
 //const date = ref(moment(date).format('YYYY-MM-DD'));
 
 const blockDataPassado = (date) => {
@@ -128,23 +130,15 @@ const promptToConfirm = (appointmentToConfirm) => {
     const appointmentLocalBase = JSON.parse(
       JSON.stringify(appointmentToConfirm)
     );
-    Appointment.update({
-      // where: (appointment) => {
-      //     return appointment.id === appointmentToConfirm.id
-      // },
-      data: appointmentLocalBase,
-    });
-    db.newDb()
-      .collection('appointments')
-      .doc({ id: appointmentToConfirm.id })
-      .set(appointmentLocalBase);
+    appointmentService.putMobile( appointmentLocalBase);
+
   });
 };
 
-created(() => {
-  editedAppointment.value = Object.assign({}, appointment);
+onBeforeMount(() => {
+  editedAppointment.value = Object.assign({}, props.appointment);
   editedAppointment.value.appointmentDate = moment(
-    appointment.appointmentDate
+    props.appointment.appointmentDate
   ).format('DD-MM-YYYY');
 });
 </script>

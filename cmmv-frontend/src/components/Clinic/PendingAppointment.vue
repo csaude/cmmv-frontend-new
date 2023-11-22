@@ -46,14 +46,16 @@
 </template>
 
 <script setup>
-import Appointment from '../../stores/models/appointment/Appointment';
 import resheduleApp from 'components/Clinic/ResheduleAppoinment.vue';
-import db from 'src/stores/localbase';
 import { date } from 'quasar';
+import {ref} from 'vue'
+import { useQuasar } from 'quasar'
+import appointmentService from 'src/services/api/appointment/appointmentService';
 
-// defineProps props: ['appointment', 'utenteDb'];
+const   props = defineProps(['appointment', 'utenteDb']);
 // emits: ['update:appointment'],
 const showReshedule = ref(false);
+const $q = useQuasar()
 
 const formatDateShort = (value) => {
   return date.formatDate(value, 'DD-MM-YYYY');
@@ -71,20 +73,13 @@ const promptToConfirm = (appointmentToConfirm) => {
     persistent: true,
   }).onOk(() => {
     appointmentToConfirm.status = 'CONFIRMADO';
-    console.log(appointmentToConfirm);
-    Appointment.update({
-      where: (appointment) => {
-        return appointment.id === appointmentToConfirm.id;
-      },
-      data: appointmentToConfirm,
-    });
     const appointmentLocalBase = JSON.parse(
       JSON.stringify(appointmentToConfirm)
     );
-    db.newDb()
-      .collection('appointments')
-      .doc({ id: appointmentToConfirm.id })
-      .set(appointmentLocalBase);
+    appointmentService.putMobile(
+      appointmentLocalBase,
+     );
+
   });
 };
 </script>

@@ -13,8 +13,10 @@
 
 <script setup>
 import VueApexCharts from 'vue3-apexcharts';
-import Appointment from '../../stores/models/appointment/Appointment';
+import appointmentService from 'src/services/api/appointment/appointmentService';
 import moment from 'moment';
+import {ref, computed, onMounted} from 'vue'
+
 // import moment from 'moment'
 const month = [
   'JAN',
@@ -31,7 +33,7 @@ const month = [
   'DEC',
 ];
 
-const Nmap = ref(new Map());
+const Nmap1 = ref(new Map());
 
 const chartOptions = {
   // ApexCharts options
@@ -92,7 +94,7 @@ const getAppointmentsDoneByMonth = () => {
     'NOV',
     'DEC',
   ];
-  const map = appointmentsDone.reduce((a, b) => {
+  const map = appointmentsDone.value.reduce((a, b) => {
     const m = toDate(b.appointmentDate).getMonth();
     console.log(m);
     a[m] = (a[m] || 0) + 1;
@@ -116,23 +118,11 @@ const getAppointmentsDoneByMonth = () => {
 };
 
 const appointmentsDone = computed(() => {
-  return Appointment.query()
-    .where((appointment) => {
-      return (
-        appointment.status === 'CONFIRMADO' &&
-        appointment.visitDate !== '' &&
-        appointment.visitDate !== null &&
-        appointment.visitDate !== undefined &&
-        appointment.hasHappened !== false &&
-        appointment.clinic_id === Number(localStorage.getItem('id_clinicUser'))
-      );
-    })
-    .orderBy('appointmentDate', 'desc')
-    .get();
+  return appointmentService.appointmentsDoneReports()
 });
 
 const series = computed(() => {
-  var mapIter = Nmap1.values();
+  var mapIter = Nmap1.value.values();
   var arrDone = [];
   for (const item of mapIter) {
     arrDone.push(item.data);
@@ -144,7 +134,7 @@ const series = computed(() => {
     },
   ];
 });
-created(() => {
-  Nmap1 = getAppointmentsDoneByMonth();
+onMounted(() => {
+  Nmap1.value = getAppointmentsDoneByMonth();
 });
 </script>

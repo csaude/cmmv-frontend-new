@@ -61,14 +61,16 @@ const searchTextConfirmed = ref('');
 const showEdit = ref(false);
 
 const appointmentsPending = computed(() => {
-  return appointmentService.getPendingAssignment('PENDENTE');
+  const appointments =  appointmentService.getPendingAssignment(  searchText.value);
+  return appointments
 });
 
 const appointmentsConfirmed = computed(() => {
-  return appointmentService.getConfirmedAssignment(
+  const appointmentConf =   appointmentService.getConfirmedAssignment(
     searchTextConfirmed.value,
     searchText.value
   );
+  return appointmentConf
 });
 
 const UtenteBD = computed(() => {
@@ -80,6 +82,7 @@ const clinicDB = computed(() => {
 
 const getAppointments = async () => {
   // Buscar as consults pelo id da clinica logada
+
   appointmentService
     .getAppointments(localStorage.getItem('id_clinicUser'))
     .then(() => {

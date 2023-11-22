@@ -13,7 +13,8 @@
 
 <script setup>
 import VueApexCharts from 'vue3-apexcharts';
-import Appointment from '../../stores/models/appointment/Appointment';
+import {ref, computed} from 'vue'
+import appointmentService from 'src/services/api/appointment/appointmentService';
 // import moment from 'moment'
 // const series = []
 // const categories = []
@@ -80,53 +81,23 @@ const chartOptions = {
 
 const getAppointmentsNumber = () => {
   const appointmentsNum = [];
-  appointmentsNum.push(appointmentsPending.length);
-  appointmentsNum.push(appointmentsDone.length);
-  appointmentsNum.push(appointmentsConfirmed.length);
+  appointmentsNum.push(appointmentsPending.value.length);
+  appointmentsNum.push(appointmentsDone.value.length);
+  appointmentsNum.push(appointmentsConfirmed.value.length);
   return appointmentsNum;
 };
 
 const appointmentsPending = computed(() => {
-  return Appointment.query()
-    .where((appointment) => {
-      return (
-        appointment.status === 'PENDENTE' &&
-        appointment.appointmentDate !== '' &&
-        appointment.clinic_id === Number(localStorage.getItem('id_clinicUser'))
-      );
-    })
-    .orderBy('appointmentDate', 'desc')
-    .get();
+ return  appointmentService.appointmentsPendingReports()
 });
 
 const appointmentsDone = computed(() => {
-  return Appointment.query()
-    .where((appointment) => {
-      return (
-        appointment.status === 'CONFIRMADO' &&
-        appointment.visitDate !== '' &&
-        appointment.visitDate !== null &&
-        appointment.visitDate !== undefined &&
-        appointment.hasHappened !== false &&
-        appointment.clinic_id === Number(localStorage.getItem('id_clinicUser'))
-      );
-    })
-    .orderBy('appointmentDate', 'desc')
-    .get();
+
+  return appointmentService.appointmentsDoneReports()
 });
 
 const appointmentsConfirmed = computed(() => {
-  return Appointment.query()
-    .where((appointment) => {
-      return (
-        appointment.status === 'CONFIRMADO' &&
-        appointment.hasHappened === false &&
-        appointment.visitDate === null &&
-        appointment.clinic_id === Number(localStorage.getItem('id_clinicUser'))
-      );
-    })
-    .orderBy('appointmentDate', 'desc')
-    .get();
+     return appointmentService.appointmentsConfirmedReports()
 });
 const series = computed(() => {
   //   var series = [11, 32, 45, 32]
