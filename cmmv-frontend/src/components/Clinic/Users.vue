@@ -383,20 +383,13 @@ const submitUser = () => {
               idLastUserLogin = 1
             }
            user.value.id =idLastUserLogin
-            userLoginService.putMobile(getObjectToSend(user)).then(resp => {
+           usersService.postWeb(getStringUserType(user), getObjectToSend(user)).then(resp => {
               console.log(resp.response.data)
               show_dialog.value = false
               submitting.value = false
              // $emit('update:show_dialog', false)
           alertSucess('Utilizador registrado com sucesso.')
             })
-          /*  usersService.apiPost(getStringUserType(user), getObjectToSend(user)).then(resp => {
-              console.log(resp.response.data)
-              show_dialog.value = false
-              submitting.value = false
-             // $emit('update:show_dialog', false)
-          alertSucess('Utilizador registrado com sucesso.')
-            })*/
         }
 
 const addUser = () => {
@@ -441,7 +434,7 @@ const getStringUserType = (user) => {
 
 const getObjectToSend = (user) => {
   if (user.value.role === 'Utilizador na US') {
-       return user
+       return user.value
      } else if (user.value.role === 'Administrador Distrital') {
         return userDistrict
      } else if (user.value.role === 'Mobilizador') {

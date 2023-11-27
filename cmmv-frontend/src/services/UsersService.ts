@@ -95,7 +95,7 @@ export default {
       })
   },
   apiPost (userType:string,objectToSend :any) {
-    return api().put(`${userType}/`,objectToSend)
+    return api().post(`${userType}/`,objectToSend)
       .catch((error) => {
         if (error.response) {
           console.log(error.response)
@@ -105,6 +105,13 @@ export default {
           console.log('Error', error.message)
         }
       })
+  },
+  postWeb(userType:string,objectToSend :any) {
+    return api()
+      .post(`${userType}/`, objectToSend)
+      .then((resp) => {
+        userLogin.save(resp.data);
+      });
   },
   getUser (params:any) {
     return api().get('secUser/' + params.id).then(resp => {
@@ -182,5 +189,5 @@ export default {
   getAllUsers() {
     return userLogin.all();
   },
-  
+
 }
