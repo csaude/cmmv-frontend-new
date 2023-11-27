@@ -97,7 +97,7 @@
       </q-page-sticky>
     </div>
     <q-dialog persistent v-model="showMobilizerRegistrationScreen">
-      <addMobilizer
+      <addMobilizerComp
         :selectedMobilizer="mobilizer"
         :editMode="editMode"
         @close="showMobilizerRegistrationScreen = false"
@@ -109,7 +109,7 @@
 import communityMobilizerService from 'src/services/api/mobilizer/CommunityMobilizerService'
 import provinceService from 'src/services/api/province/provinceService'
 import districtService from 'src/services/api/district/districtService'
-import addMobilizer from   'components/Clinic/AddMobilizer.vue';
+import addMobilizerComp from   'components/Clinic/AddMobilizer.vue';
 import { useLoading } from 'src/composables/shared/loading/loading';
 import { useSwal } from 'src/composables/shared/dialog/dialog';
 import { ref } from 'vue'
@@ -184,7 +184,7 @@ const editMobilizer = (mobilizer) => {
 
 const getAllProvinces = () => {
    return provinceService.getAllProvinces()
-}       
+}
 </script>
 
 <style>

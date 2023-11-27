@@ -10,7 +10,6 @@
 
 <script setup>
 import VueApexCharts from 'vue3-apexcharts';
-import Appointment from '../../stores/models/appointment/Appointment';
 import moment from 'moment';
 import { ref, computed,  onMounted } from 'vue';
 import appointmentService from 'src/services/api/appointment/appointmentService';

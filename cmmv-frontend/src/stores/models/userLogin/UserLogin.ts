@@ -10,12 +10,8 @@ import Utente from '../utente/Utente';
 
 export class UserLogin extends Model {
   static entity = 'userLogins'
+  static primaryKey = 'id'
 
-  static state () {
-    return {
-      fetching: false
-    }
-}
 /*
 static types () {
   return {

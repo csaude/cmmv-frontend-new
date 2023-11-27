@@ -118,7 +118,7 @@ import { useLoading } from 'src/composables/shared/loading/loading';
 // Components
 import AppointmentSchedule from 'components/Clinic/AppointmentSchedule.vue';
 import AppointmentList from 'components/Clinic/ClinicAppointments.vue';
-// import Settings from 'components/Clinic/Settings.vue';
+ import Settings from 'components/Clinic/Settings.vue';
 import UserMessage from 'components/Clinic/UserMessage.vue';
 import clinicService from 'src/services/api/clinic/clinicService';
 import districtService from 'src/services/api/district/districtService';
