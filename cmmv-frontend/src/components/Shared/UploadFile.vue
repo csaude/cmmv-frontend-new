@@ -26,7 +26,7 @@
 </template>
 <script setup>
 import { ref } from 'vue'
-import InfoDocsOrImages from '../../store/models/dorcOrImages/InfoDocsOrImages'
+import InfoDocsOrImages from '../../stores/models/dorcOrImages/InfoDocsOrImages'
 import { QSpinnerIos } from 'quasar'
 import { useLoading } from 'src/composables/shared/loading/loading';
 import viewDocs from 'components/Home/MaterialEducativo.vue'

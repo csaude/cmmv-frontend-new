@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="row q-py-lg q-mt-md text-weight-bold text-subtitle1">
-      Hoje, {{ this.formatDateDDMMMYYYY(new Date()) }}
+      Hoje, {{ formatDateDDMMMYYYY(new Date()) }}
     </div>
     <div class="">
       <q-toolbar>
@@ -15,21 +15,21 @@
 
       <q-tab-panels v-model="tab" animated>
         <q-tab-panel name="ConsultasDay">
-          <clinic-appointments-table
+          <clinicAppointmentsTable
             v-model:rows="getAppointmentsToday"
             :columns="columns"
             :updateClinicAppoitment="updateClinicAppoitment"
           />
         </q-tab-panel>
         <q-tab-panel name="ConsultasOther">
-          <clinic-appointments-table
+          <clinicAppointmentsTable
             v-model:rows="appointmentsBDD"
             :columns="columns"
             :updateClinicAppoitment="updateClinicAppoitment"
           />
         </q-tab-panel>
         <q-tab-panel name="ConsultasDone">
-          <clinic-appointments-table
+          <clinicAppointmentsTable
             v-model:rows="appointmentsDone"
             :columns="columns2"
             :updateClinicAppoitment="updateClinicAppoitment"
@@ -39,11 +39,12 @@
     </div>
   </div>
 </template>
-<script>
+<script setup>
 import { date, useQuasar } from 'quasar';
-import { ref } from 'vue';
+import { onMounted,computed, ref } from 'vue';
 import Appointment from '../../stores/models/appointment/Appointment';
-import db from 'src/store/localbase';
+import clinicAppointmentsTable from 'components/Clinic/ClinicAppointmentsTable.vue';
+import appointmentService from 'src/services/api/appointment/appointmentService';
 const columns = [
   {
     name: 'appointmentDate',
@@ -132,111 +133,35 @@ const columns2 = [
     sortable: true,
   },
 ];
-export default {
-  data() {
-    const $q = useQuasar();
 
-    return {
-      columns,
-      columns2,
-      $q,
-      tab: ref('ConsultasDay'),
-    };
-  },
-  computed: {
-    getAppointmentsToday() {
-      return Appointment.query()
-        .with('utente')
-        .with('clinic.province')
-        .with('clinic.district.province')
-        .with('utente.addresses')
-        .with('utente.addresses.province')
-        .with('utente.addresses.district.province')
-        .with('utente.communityMobilizer')
-        .with('utente.clinic')
-        .where((appointment) => {
-          return (
-            appointment.status === 'CONFIRMADO' &&
-            appointment.hasHappened === false &&
-            appointment.appointmentDate !== '' &&
-            appointment.appointmentDate !== null &&
-            appointment.appointmentDate !== undefined &&
-            new Date(this.formatDate(appointment.appointmentDate)).getTime() ===
-              new Date(this.formatDate(new Date())).getTime() &&
-            appointment.clinic_id ===
-              Number(localStorage.getItem('id_clinicUser'))
-          );
-        })
-        .orderBy('appointmentDate', 'desc')
-        .get();
-    },
-    appointmentsBDD() {
-      return Appointment.query()
-        .with('utente')
-        .with('clinic.province')
-        .with('clinic.district.province')
-        .with('utente.addresses')
-        .with('utente.addresses.province')
-        .with('utente.addresses.district.province')
-        .with('utente.communityMobilizer')
-        .with('utente.clinic')
-        .where((appointment) => {
-          return (
-            appointment.status === 'CONFIRMADO' &&
-            appointment.hasHappened === false &&
-            (appointment.visitDate === null ||
-              appointment.visitDate === '' ||
-              appointment.visitDate === undefined) &&
-            appointment.appointmentDate !== '' &&
-            appointment.appointmentDate !== null &&
-            appointment.appointmentDate !== undefined &&
-            new Date(this.formatDate(appointment.appointmentDate)).getTime() <
-              new Date(this.formatDate(new Date())).getTime() &&
-            appointment.clinic_id ===
-              Number(localStorage.getItem('id_clinicUser'))
-          );
-        })
-        .orderBy('appointmentDate', 'desc')
-        .get();
-    },
-    appointmentsDone() {
-      return Appointment.query()
-        .with('utente')
-        .with('clinic.province')
-        .with('clinic.district.province')
-        .with('utente.addresses')
-        .with('utente.addresses.province')
-        .with('utente.addresses.district.province')
-        .with('utente.communityMobilizer')
-        .with('utente.clinic')
-        .where((appointment) => {
-          return (
-            appointment.status === 'CONFIRMADO' &&
-            appointment.visitDate !== '' &&
-            appointment.visitDate !== null &&
-            appointment.visitDate !== undefined &&
-            appointment.hasHappened !== false &&
-            appointment.clinic_id ===
-              Number(localStorage.getItem('id_clinicUser'))
-          );
-        })
-        .orderBy('appointmentDate', 'desc')
-        .get();
-    },
-  },
-  methods: {
-    async getAppointments() {
-      await Appointment.api()
-        .get('/appointment')
-        .then((resp) => {
-          this.$q.loading.hide();
-        })
-        .catch((error) => {
-          this.$q.loading.hide();
-          console.log('Erro no code ' + error);
-        });
-    },
-    updateClinicAppoitment(appointmentToUpdate) {
+  const $q = useQuasar();
+  const tab = ref('ConsultasDay')
+
+
+
+    const getAppointmentsToday= computed(() => {
+      return appointmentService.getAppointmentsToday()
+    });
+
+    const appointmentsBDD = computed(() =>{
+      return appointmentService.appointmentsBDD()
+    });
+
+ const   appointmentsDone = computed (()=>  {
+
+  return  appointmentService.getConfirmedAssignment('','')
+
+    });
+
+
+
+    const  getAppointments =() =>{
+
+     return appointmentService.getAppointments()
+
+    }
+
+   const  updateClinicAppoitment =(appointmentToUpdate)=> {
       Appointment.update({
         where: (appointment) => {
           return appointment.id === appointmentToUpdate.id;
@@ -248,24 +173,14 @@ export default {
         .collection('appointments')
         .doc({ id: appointmentToUpdate.id })
         .set(appointmentToUpdate);
-    },
-    formatDate(value) {
+    }
+
+    const formatDate = (value) =>  {
       return date.formatDate(value, 'YYYY/MM/DD');
-    },
-    formatDateDDMMMYYYY(value) {
+    }
+
+    const formatDateDDMMMYYYY= (value)=> {
       return date.formatDate(value, 'DD MMM YYYY');
-    },
-  },
-  mounted() {
-    //  this.$q.loading.show({
-    //   spinner: QSpinnerIos,
-    //   message: 'Por favor, aguarde...'
-    //  })
-    //  this.getAppointments()
-  },
-  components: {
-    'clinic-appointments-table':
-      require('components/Clinic/ClinicAppointmentsTable.vue').default,
-  },
-};
+    }
+
 </script>

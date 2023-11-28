@@ -7,7 +7,7 @@
     <q-item-section>
       <q-item-label
         >&nbsp;{{
-          appointment && this.formatDateShort(appointment.appointmentDate)
+          appointment && formatDateShort(appointment.appointmentDate)
         }}
         &nbsp;
       </q-item-label>
@@ -37,16 +37,14 @@
 
 <script setup>
 import { date } from 'quasar';
-import Appointment from 'src/stores/models/appointment/Appointment';
-import db from 'src/stores/localbase';
+import { useQuasar } from 'quasar'
+import appointmentService from 'src/services/api/appointment/appointmentService';
+
 
 const props = defineProps(['appointment']);
+const $q = useQuasar()
 
-const finalize = (reset) => {
-  this.timer = setTimeout(() => {
-    reset();
-  }, 100);
-};
+
 
 const formatDateShort = (value) => {
   return date.formatDate(value, 'DD-MM-YYYY');
@@ -54,6 +52,8 @@ const formatDateShort = (value) => {
 
 const promptToConfirm = (appointmentToConfirm) => {
   if (appointmentToConfirm.syncStatus === 'S') {
+
+
     $q.dialog({
       title: 'Informação',
       message:
@@ -65,10 +65,10 @@ const promptToConfirm = (appointmentToConfirm) => {
       },
       persistent: true,
     }).onOk(() => {
-      //   this.finalize(reset)
+      //   finalize(reset)
     });
   } else {
-    this.$q
+    $q
       .dialog({
         title: 'Confirm',
         message: 'Deseja remover a confirmação?',
@@ -77,20 +77,13 @@ const promptToConfirm = (appointmentToConfirm) => {
       })
       .onOk(() => {
         appointmentToConfirm.status = 'PENDENTE';
-        console.log(appointmentToConfirm);
         const appointmentLocalBase = JSON.parse(
           JSON.stringify(appointmentToConfirm)
         );
-        Appointment.update({
-          //   where: (appointment) => {
-          //     return appointment.id === appointmentToConfirm.id
-          // },
-          data: appointmentLocalBase,
-        });
-        db.newDb()
-          .collection('appointments')
-          .doc({ id: appointmentToConfirm.id })
-          .set(appointmentLocalBase);
+        appointmentService.putMobile(
+          appointmentLocalBase
+        );
+
       });
   }
 };

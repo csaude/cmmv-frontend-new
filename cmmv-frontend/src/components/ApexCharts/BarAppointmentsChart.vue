@@ -10,8 +10,10 @@
 
 <script setup>
 import VueApexCharts from 'vue3-apexcharts';
-import Appointment from '../../store/models/appointment/Appointment';
 import moment from 'moment';
+import { ref, computed,  onMounted } from 'vue';
+import appointmentService from 'src/services/api/appointment/appointmentService';
+
 const monthsX = [
   'JAN',
   'FEV',
@@ -98,7 +100,7 @@ const chartOptions = {
 
 const getAppointmentsPendingByMonth = () => {
   var monthsPresent = [];
-  const map = appointmentsPending.reduce((a, b) => {
+  const map = appointmentsPending.value.reduce((a, b) => {
     const m = toDateStr(b.appointmentDate).getMonth();
     a[m] = (a[m] || 0) + 1;
     monthsPresent.push(monthsEng[+m]);
@@ -121,7 +123,7 @@ const getAppointmentsPendingByMonth = () => {
 
 const getAppointmentsDoneByMonth = () => {
   var monthsPresent = [];
-  const map = appointmentsDone.reduce((a, b) => {
+  const map = appointmentsDone.value.reduce((a, b) => {
     const m = toDateStr(b.appointmentDate).getMonth();
     console.log(m);
     a[m] = (a[m] || 0) + 1;
@@ -145,7 +147,7 @@ const getAppointmentsDoneByMonth = () => {
 
 const getAppointmentsConfirmedByMonth = () => {
   var monthsPresent = [];
-  const map = appointmentsConfirmed.reduce((a, b) => {
+  const map = appointmentsConfirmed.value.reduce((a, b) => {
     const m = toDateStr(b.appointmentDate).getMonth();
     console.log(m);
     a[m] = (a[m] || 0) + 1;
@@ -168,59 +170,28 @@ const getAppointmentsConfirmedByMonth = () => {
 };
 
 const appointmentsPending = computed(() => {
-  return Appointment.query()
-    .where((appointment) => {
-      return (
-        appointment.status === 'PENDENTE' &&
-        appointment.appointmentDate !== '' &&
-        appointment.clinic_id === Number(localStorage.getItem('id_clinicUser'))
-      );
-    })
-    .orderBy('appointmentDate', 'desc')
-    .get();
+  return appointmentService.appointmentsPendingReports();
 });
 
 const appointmentsDone = computed(() => {
-  return Appointment.query()
-    .where((appointment) => {
-      return (
-        appointment.status === 'CONFIRMADO' &&
-        appointment.visitDate !== '' &&
-        appointment.visitDate !== null &&
-        appointment.visitDate !== undefined &&
-        appointment.hasHappened !== false &&
-        appointment.clinic_id === Number(localStorage.getItem('id_clinicUser'))
-      );
-    })
-    .orderBy('appointmentDate', 'desc')
-    .get();
+  return appointmentService.appointmentsDoneReports()
 });
 
 const appointmentsConfirmed = computed(() => {
-  return Appointment.query()
-    .where((appointment) => {
-      return (
-        appointment.status === 'CONFIRMADO' &&
-        appointment.hasHappened === false &&
-        appointment.visitDate === null &&
-        appointment.clinic_id === Number(localStorage.getItem('id_clinicUser'))
-      );
-    })
-    .orderBy('appointmentDate', 'desc')
-    .get();
+  return appointmentService.appointmentsConfirmedReports()
 });
 const series = computed(() => {
-  var mapIter = mapAppointmentsPending.values();
+  var mapIter = mapAppointmentsPending.value.values();
   var arrPending = [];
   for (const item of mapIter) {
     arrPending.push(item.data);
   }
-  var mapIter1 = mapAppointmentsDone.values();
+  var mapIter1 = mapAppointmentsDone.value.values();
   var arrDone = [];
   for (const item of mapIter1) {
     arrDone.push(item.data);
   }
-  var mapIter2 = mapAppointmentsConfirmed.values();
+  var mapIter2 = mapAppointmentsConfirmed.value.values();
   var arrConfirmed = [];
   for (const item of mapIter2) {
     arrConfirmed.push(item.data);
@@ -241,9 +212,9 @@ const series = computed(() => {
   ];
 });
 
-created(() => {
-  mapAppointmentsPending = getAppointmentsPendingByMonth();
-  mapAppointmentsDone = getAppointmentsDoneByMonth();
-  mapAppointmentsConfirmed = getAppointmentsConfirmedByMonth();
+onMounted(() => {
+  mapAppointmentsPending.value = getAppointmentsPendingByMonth();
+  mapAppointmentsDone.value = getAppointmentsDoneByMonth();
+  mapAppointmentsConfirmed.value = getAppointmentsConfirmedByMonth();
 });
 </script>

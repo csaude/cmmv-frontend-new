@@ -4,6 +4,7 @@ import { nSQL } from 'nano-sql';
 import Appointment from 'src/stores/models/appointment/Appointment';
 import { useSwal } from 'src/composables/shared/dialog/dialog';
 import { useSystemUtils } from 'src/composables/shared/systemUtils/systemUtils';
+import { date } from 'quasar';
 
 const appointment = useRepo(Appointment);
 
@@ -182,49 +183,29 @@ export default {
   },
   getAppointmentByUtenteId(utenteId:number) {
     return appointment.query().where('utente_id', utenteId).first()
-  }
+  },
   getPendingAssignment(searchText: string) {
     if (searchText.length === 0) {
       return appointment
-        .query()
-        .with('utente')
-        .with('clinic.province')
-        .with('clinic.district.province')
-        .with('utente.address')
-        .with('utente.province')
-        .with('utente.district.province')
-        .with('utente.communityMobilizer')
-        .with('utente.clinic')
-        .where((appointment) => {
-          return (
-            appointment.status === 'PENDENTE' &&
-            appointment.appointmentDate !== '' &&
-            appointment.clinic_id ===
-              Number(localStorage.getItem('id_clinicUser'))
-          );
-        })
+      .query().withAllRecursive(2)
+      .where( 'status', 'PENDENTE')
+     // .where( 'hasHappened', 'false')
+      .where( 'clinic_id',  Number(localStorage.getItem('id_clinicUser')))
+      .where((appointment) => {
+         return appointment.appointmentDate !== '';
+       })
         .orderBy('appointmentDate', 'desc')
         .get();
     } else {
       // this.appointmentsPendingToFilter = this.appointmentsPending
       return appointment
-        .query()
-        .with('utente')
-        .with('clinic.province')
-        .with('clinic.district.province')
-        .with('utente.address')
-        .with('utente.province')
-        .with('utente.district.province')
-        .with('utente.communityMobilizer')
-        .with('utente.clinic')
-        .where((appointment) => {
-          return (
-            appointment.status === 'PENDENTE' &&
-            appointment.appointmentDate !== '' &&
-            appointment.clinic_id ===
-              Number(localStorage.getItem('id_clinicUser'))
-          );
-        })
+      .query().withAllRecursive(2)
+      .where( 'status', 'PENDENTE')
+      //.where( 'hasHappened', 'false')
+      .where( 'clinic_id',  Number(localStorage.getItem('id_clinicUser')))
+      .where((appointment) => {
+        return appointment.appointmentDate !== '';
+      })
         .whereHas('utente', (query) => {
           query.where((utente) => {
             return (
@@ -245,46 +226,25 @@ export default {
 
   getConfirmedAssignment(searchTextConfirmed: any, searchText: any) {
     if (searchTextConfirmed.length === 0) {
-      return appointment
-        .query()
-        .with('utente')
-        .with('clinic.province')
-        .with('clinic.district.province')
-        .with('utente.address')
-        .with('utente.province')
-        .with('utente.district.province')
-        .with('utente.communityMobilizer')
-        .with('utente.clinic')
-        .where((appointment) => {
-          return (
-            appointment.status === 'CONFIRMADO' &&
-            !appointment.hasHappened &&
-            appointment.appointmentDate !== '' &&
-            appointment.clinic_id ===
-              Number(localStorage.getItem('id_clinicUser'))
-          );
+      const list = appointment
+        .query().withAllRecursive(2)
+       .where( 'status', 'CONFIRMADO')
+       //.where( 'hasHappened', 'false')
+       .where( 'clinic_id',  Number(localStorage.getItem('id_clinicUser')))
+       .where((appointment) => {
+          return appointment.appointmentDate !== '';
         })
         .orderBy('appointmentDate', 'desc')
         .get();
+        return list
     } else {
       return appointment
-        .query()
-        .with('utente')
-        .with('clinic.province')
-        .with('clinic.district.province')
-        .with('utente.address')
-        .with('utente.province')
-        .with('utente.district.province')
-        .with('utente.communityMobilizer')
-        .with('utente.clinic')
+        .query().withAllRecursive(2)
+        .where( 'status', 'CONFIRMADO')
+        .where( 'hasHappened', 'false')
+        .where( 'clinic_id',  Number(localStorage.getItem('id_clinicUser')))
         .where((appointment) => {
-          return (
-            appointment.status === 'CONFIRMADO' &&
-            !appointment.hasHappened &&
-            appointment.appointmentDate !== '' &&
-            appointment.clinic_id ===
-              Number(localStorage.getItem('id_clinicUser'))
-          );
+          return appointment.appointmentDate !== '';
         })
         .whereHas('utente', (query) => {
           query.where((utente) => {
@@ -303,4 +263,97 @@ export default {
         .get();
     }
   },
+
+   appointmentsPendingReports ()  {
+    return appointment.query()
+      .where((appointment) => {
+        return (
+          appointment.status === 'PENDENTE' &&
+          appointment.appointmentDate !== '' &&
+          appointment.clinic_id === Number(localStorage.getItem('id_clinicUser'))
+        );
+      })
+      .orderBy('appointmentDate', 'desc')
+      .get();
+  },
+
+  appointmentsDoneReports ()  {
+  return appointment.query()
+    .where((appointment) => {
+      return (
+        appointment.status === 'CONFIRMADO' &&
+        appointment.visitDate !== '' &&
+        appointment.visitDate !== null &&
+        appointment.visitDate !== undefined &&
+        appointment.hasHappened !== false &&
+        appointment.clinic_id === Number(localStorage.getItem('id_clinicUser'))
+      );
+    })
+    .orderBy('appointmentDate', 'desc')
+    .get();
+  },
+
+   appointmentsConfirmedReports () {
+    return appointment.query()
+      .where((appointment) => {
+        return (
+          appointment.status === 'CONFIRMADO' &&
+          appointment.hasHappened === false &&
+          appointment.visitDate === null &&
+          appointment.clinic_id === Number(localStorage.getItem('id_clinicUser'))
+        );
+      })
+      .orderBy('appointmentDate', 'desc')
+      .get();
+  },
+
+  getAppointmentsToday ()  {
+    return appointment.query().withAllRecursive(2)
+    .where( 'status', 'CONFIRMADO')
+    .where( 'hasHappened', 'false')
+    .where( 'clinic_id',  Number(localStorage.getItem('id_clinicUser')))
+    .where((appointment) => {
+      return appointment.appointmentDate !== '' &&  appointment.appointmentDate !== '' &&
+      appointment.appointmentDate !== null &&
+      appointment.appointmentDate !== undefined &&
+      new Date(this.formatDate(appointment.appointmentDate)).getTime() ===
+        new Date(this.formatDate(new Date())).getTime()
+    })
+
+      .orderBy('appointmentDate', 'desc')
+      .get();
+  },
+
+   appointmentsBDD () {
+    return appointment.query().withAllRecursive(2)
+    .where( 'status', 'CONFIRMADO')
+    .where( 'hasHappened', 'false')
+    .where( 'clinic_id',  Number(localStorage.getItem('id_clinicUser')))
+      .where((appointment) => {
+        return (
+          appointment.status === 'CONFIRMADO' &&
+          appointment.hasHappened === false &&
+          (appointment.visitDate === null ||
+            appointment.visitDate === '' ||
+            appointment.visitDate === undefined) &&
+          appointment.appointmentDate !== '' &&
+          appointment.appointmentDate !== null &&
+          appointment.appointmentDate !== undefined &&
+          new Date(this.formatDate(appointment.appointmentDate)).getTime() <
+            new Date(this.formatDate(new Date())).getTime() &&
+          appointment.clinic_id ===
+            Number(localStorage.getItem('id_clinicUser'))
+        );
+      })
+      .orderBy('appointmentDate', 'desc')
+      .get();
+  },
+   formatDate (value)  {
+    return date.formatDate(value, 'YYYY/MM/DD');
+  },
+ formatDateDDMMMYYYY (value) {
+    return date.formatDate(value, 'DD MMM YYYY');
+  }
+
+
 };

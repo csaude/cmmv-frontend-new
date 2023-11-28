@@ -1,11 +1,12 @@
 import { useRepo } from 'pinia-orm';
 import api from '../apiService/apiService';
 import { nSQL } from 'nano-sql';
-import Clinic from 'src/stores/models/clinic/Clinic';
 import { useSwal } from 'src/composables/shared/dialog/dialog';
 import { useSystemUtils } from 'src/composables/shared/systemUtils/systemUtils';
+import { UserLogin } from 'src/stores/models/userLogin/UserLogin';
 
-const clinic = useRepo(Clinic);
+
+const userLogin = useRepo(UserLogin);
 
 const { alertSucess, alertError } = useSwal();
 const { isMobile, isOnline } = useSystemUtils();
@@ -42,17 +43,17 @@ export default {
   // WEB
   postWeb(params: string) {
     return api()
-      .post('clinic', params)
+      .post('userLogin', params)
       .then((resp) => {
-        clinic.save(resp.data);
+        userLogin.save(resp.data);
       });
   },
   getWeb(offset: number) {
     if (offset >= 0) {
       return api()
-        .get('clinic?offset=' + offset + '&max=100')
+        .get('userLogin?offset=' + offset + '&max=100')
         .then((resp) => {
-          clinic.save(resp.data);
+          userLogin.save(resp.data);
           offset = offset + 100;
           if (resp.data.length > 0) {
             this.get(offset);
@@ -65,43 +66,34 @@ export default {
   },
   patchWeb(id: number, params: string) {
     return api()
-      .patch('clinic/' + id, params)
+      .patch('userLogin/' + id, params)
       .then((resp) => {
-        clinic.save(resp.data);
+        userLogin.save(resp.data);
       });
   },
   deleteWeb(id: number) {
     return api()
-      .delete('clinic/' + id)
+      .delete('userLogin/' + id)
       .then(() => {
-        clinic.destroy(id);
+        userLogin.destroy(id);
       });
   },
-  async getAllClinicsByDistrictId(districtId: number) {
-    await api()
-      .get('/clinic/district/' + districtId)
-      .then((resp) => {
-        this.putMobile(resp.data);
-      })
-      .catch((error) => {
-        console.log(error);
-      });
-  },
+
   // Mobile
   putMobile(params: string) {
-    return nSQL(Clinic.entity)
+    return nSQL(UserLogin.entity)
       .query('upsert', params)
       .exec()
       .then((resp) => {
-        clinic.save(resp[0].affectedRows);
+        userLogin.save(resp[0].affectedRows);
       });
   },
   getMobile() {
-    return nSQL(Clinic.entity)
+    return nSQL(UserLogin.entity)
       .query('select')
       .exec()
       .then((rows: any) => {
-        clinic.save(rows);
+        userLogin.save(rows);
       })
       .catch((error: any) => {
         // alertError('Aconteceu um erro inesperado nesta operação.');
@@ -109,12 +101,12 @@ export default {
       });
   },
   deleteMobile(paramsId: string) {
-    return nSQL(Clinic.entity)
+    return nSQL(UserLogin.entity)
       .query('delete')
       .where(['id', '=', paramsId])
       .exec()
       .then(() => {
-        clinic.destroy(paramsId);
+        userLogin.destroy(paramsId);
         alertSucess('O Registo foi removido com sucesso');
       })
       .catch((error: any) => {
@@ -124,31 +116,18 @@ export default {
   },
   // Local Storage Pinia
   newInstanceEntity() {
-    return clinic.getModel().$newInstance();
+    return userLogin.getModel().$newInstance();
   },
   getAllFromStorage() {
-    return clinic.all();
+    return userLogin.all();
   },
   deleteAllFromStorage() {
-    clinic.flush();
+    userLogin.flush();
   },
-  getLocalClinicsByDistrictId(districtId: number) {
-    return clinic
-      .query()
-      .with('province')
-      .with('district')
-      .where('district_id', districtId)
-      .get();
+  getByUserLoginId(id: number) {
+    return userLogin.query().whereId(id).first();
   },
-
-  getByClinicId(id: number) {
-    return clinic.query().with('province').with('district').whereId(id).first();
-  },
-
-  getClinicByUse(id_clinicUser: any) {
-    return clinic.query().withAllRecursive().find(id_clinicUser);
-  },
-  getClinicSByUser(id_clinicUser: any) {
-    return clinic.query().get(id_clinicUser);
+  getAllUsers() {
+    return userLogin.query().withAllRecursive(2).orderBy('id', 'desc').get();
   },
 };

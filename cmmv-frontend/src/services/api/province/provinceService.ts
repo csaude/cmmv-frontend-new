@@ -89,7 +89,9 @@ export default {
 
 
   getAllProvinces() {
-    return province.query().with('districts').orderBy('code', 'asc').get();
+    const ab = province.query().withAllRecursive(2).orderBy('code', 'asc').get();
+    return ab
+    // .has('code')
   },
 
   // Local Storage Pinia

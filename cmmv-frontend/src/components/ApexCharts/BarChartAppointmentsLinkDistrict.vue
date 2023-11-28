@@ -13,7 +13,7 @@ import VueApexCharts from 'vue3-apexcharts';
 import Appointment from '../../stores/models/appointment/Appointment';
 import moment from 'moment';
 import Utente from '../../stores/models/utente/Utente';
-import { ref, computed, created } from 'vue';
+import { ref, computed, onBeforeMount } from 'vue';
 
 const monthsX = [
   'JAN',
@@ -192,7 +192,7 @@ const series = computed(() => {
   ];
 });
 
-created(() => {
+onBeforeMount(() => {
   //  .getAllUtentesByDistrictId(localStorage.getItem('idLogin'))
   //   .getAllAppointmentsByDistrictId(localStorage.getItem('idLogin'))
   mapUtentesRegistred.value = getUtentesRegistredByMonth();

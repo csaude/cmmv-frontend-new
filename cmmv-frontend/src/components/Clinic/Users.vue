@@ -209,7 +209,11 @@ import usersService from 'src/services/UsersService'
 import provinceService from 'src/services/api/province/provinceService'
 import { useLoading } from 'src/composables/shared/loading/loading';
 import { useSwal } from 'src/composables/shared/dialog/dialog';
-import { ref } from 'vue'
+import { UserLogin } from 'src/stores/models/userLogin/UserLogin';
+import { DistrictUserLogin } from 'src/stores/models/userLogin/DistrictUserLogin';
+import userLoginService from 'src/services/api/userLogin/userLoginService'
+import { ref, onMounted, computed } from 'vue'
+import clinicService from 'src/services/api/clinic/clinicService';
 
 const { alertSucess, alertError, alertInfo } = useSwal();
 const { closeLoading, showloading } = useLoading();
@@ -220,7 +224,7 @@ const columns = [
             ]
 
 
-const user = new UserLogin();
+const user = ref({});
 const userDistrict = new DistrictUserLogin();
 
 const nomeRef = ref(null);
@@ -250,14 +254,15 @@ const userRoles = ref( [
 
  onMounted(() => {
   showloading();
-  getAllProvinces()
+  // getAllProvinces()
   if (localStorage.getItem('role') === 'ROLE_ADMIN') {
-       UsersService.apiGetAll()
+    usersService.apiGetAll()
      } else if (localStorage.getItem('role') === 'ROLE_USER') {
       usersService.getAllUsersByClinicId(localStorage.getItem('id_clinicUser'))
      } else if (localStorage.getItem('role') === 'ROLE_USER_DISTRICT') {
       usersService.getAllUsersByDistrictId(localStorage.getItem('idLogin'))
      }
+     closeLoading()
 });
 
 const provinces =  computed(() => {
@@ -283,14 +288,14 @@ const displayClinics =  computed(() => {
 
 
 const isRoleAdm = computed(() => {
-  if (user.role === 'Utilizador na US' && localStorage.getItem('role') !== 'ROLE_USER') {
+  if (user.value.role === 'Utilizador na US' && localStorage.getItem('role') !== 'ROLE_USER') {
             return true
      }
           return false
 });
 
 const users = computed(() => {
-  return UserLogin.getAllUsers()
+  return userLoginService.getAllUsers()
 });
 
 const getClinicsByDistrictId = async () => {
@@ -318,38 +323,67 @@ const getAllClinicsByDistrictId = async (districtId) => {
 }
 
 const validateUser = () => {
+
+  if (!hideFields.value) {
+    provinceRef.value.validate();
+  districtRef.value.validate();
+  roleRef.value.validate();
+  }
   nomeRef.value.validate();
   apelidoRef.value.validate();
-  roleRef.value.validate();
   usernameRef.value.validate();
   passwordRef.value.validate();
-  provinceRef.value.validate();
-  districtRef.value.validate();
 
-  if (
+
+  if (!hideFields.value) {
+
+    if (
     !nomeRef.value.hasError &&
     !apelidoRef.value.hasError &&
     !provinceRef.value.hasError &&
-    !roleRef.value.hasError &&
     !districtRef.value.hasError &&
+    !roleRef.value.hasError &&
     !passwordRef.value.hasError &&
     !usernameRef.value.hasError
   ) {
             submitUser()
         }
+
+  }
+
+  else {
+    if (
+    !nomeRef.value.hasError &&
+    !apelidoRef.value.hasError &&
+    !passwordRef.value.hasError &&
+    !usernameRef.value.hasError
+  ) {
+            submitUser()
+        }
+
+  }
+
+
 }
 
 const submitUser = () => {
            submitting.value = true
           listErrors.value = []
-           user.value.fullName = user.firstNames + ' ' + user.lastNames
-            if (user.role === 'Administrador Distrital') {
+           user.value.fullName = user.value.firstNames + ' ' + user.value.lastNames
+            if (user.value.role === 'Administrador Distrital') {
             //  user = DistrictLogin()
                userDistrict = Object.assign({}, user)
              userDistrict.province = province
               userDistrict.district = district
             }
-            usersService.apiPost(getStringUserType(), getObjectToSend()).then(resp => {
+            let idLastUserLogin= 0
+            try{
+              idLastUserLogin    = userLoginService.getAllUsers()[0].id +1
+            } catch (error) {
+              idLastUserLogin = 1
+            }
+           user.value.id =idLastUserLogin
+           usersService.postWeb(getStringUserType(user), getObjectToSend(user)).then(resp => {
               console.log(resp.response.data)
               show_dialog.value = false
               submitting.value = false
@@ -357,26 +391,26 @@ const submitUser = () => {
           alertSucess('Utilizador registrado com sucesso.')
             })
         }
-  
+
 const addUser = () => {
-  user = new UserLogin()
+  user.value = new UserLogin()
             province.value = null
             district.value = null
          if (localStorage.getItem('role') === 'ROLE_USER_DISTRICT') {
-      user.role = 'Utilizador na US'
+      user.value.role = 'Utilizador na US'
       district.value = District.query().with('province').find(localStorage.getItem('idLogin'))
         province.value = district.value.province
         disableFields.value = true
           hideFields.value = true
      } else if (localStorage.getItem('role') === 'ROLE_USER') {
-       user.role = 'Utilizador na US'
-         user.clinic = Clinic.query().with('province').with('district.province').find(localStorage.getItem('id_clinicUser'))
-          province.value = user.clinic.district.province
-       district.value = user.clinic.district
+       user.value.role = 'Utilizador na US'
+         user.value.clinic =  clinicService.getClinicByUse(localStorage.getItem('id_clinicUser')) // Clinic.query().with('province').with('district.province').find(localStorage.getItem('id_clinicUser'))
+          province.value = user.value.clinic.district.province
+       district.value = user.value.clinic.district
         disableFields.value = true
         hideFields.value = true
      }
-         // user.role = 'Utilizador Clinica'
+         // user.value.role = 'Utilizador Clinica'
          show_dialog.value = true
 }
 
@@ -400,10 +434,10 @@ const getStringUserType = (user) => {
 
 const getObjectToSend = (user) => {
   if (user.value.role === 'Utilizador na US') {
-       return user
+       return user.value
      } else if (user.value.role === 'Administrador Distrital') {
         return userDistrict
-     } else if (user.role === 'Mobilizador') {
+     } else if (user.value.role === 'Mobilizador') {
         return '/mobilizerLogin'
      }
 }

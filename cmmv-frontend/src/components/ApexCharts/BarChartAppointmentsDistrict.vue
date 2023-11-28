@@ -281,7 +281,7 @@ const series = computed(() => {
   ];
 });
 
-created(() => {
+onBeforeMount(() => {
   //   getAllUtentesByDistrictId(localStorage.getItem('idLogin'))
   //    getAllAppointmentsByDistrictId(localStorage.getItem('idLogin'))
   mapUtentesRegistred = getUtentesRegistredByMonth();

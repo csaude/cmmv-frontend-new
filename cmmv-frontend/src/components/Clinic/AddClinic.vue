@@ -1,6 +1,6 @@
 <template>
-  <div class="row q-mb-md" v-if="this.showAddButton">
-                <combo-field
+  <div class="row q-mb-md" v-if="showAddButton">
+                <comboField
                     class="col"
                     v-model="province"
                     :options="provinces"
@@ -12,7 +12,7 @@
                     :rules="[ val => ( val != null ) || ' Por favor indique a província']"
                     lazy-rules
                     label="Província" />
-                <combo-field
+                <comboField
                     class="col q-ml-md"
                      transition-show="flip-up"
                     transition-hide="flip-down"
@@ -78,7 +78,7 @@
             <q-btn size="xl" fab icon="add" @click="addClinic()" no-cap color="primary"  v-if="showAddButton" />
           </q-page-sticky>
         </div>
-    <!--q-table title="Unidade Sanitária" :data="this.clinicos" :columns="columns" row-key="name" binary-state-sort :filter="filter">
+    <!--q-table title="Unidade Sanitária" :data="clinicos" :columns="columns" row-key="name" binary-state-sort :filter="filter">
       <template v-slot:top-right>
       <q-input v-if="show_filter" filled borderless dense debounce="300" v-model="filter" placeholder="Pesquisa">
               <template v-slot:append>
@@ -87,7 +87,7 @@
             </q-input>
       <div class="q-pa-md q-gutter-sm">
       <q-btn class="q-ml-sm" icon="filter_list" @click="show_filter=!show_filter" flat/>
-        <q-btn outline rounded color="primary" icon="add" @click="show_dialog = true" no-caps/>
+        <q-btn outline rounded color="primary" icon="add" @click="show_dialog.value = true" no-caps/>
       </div>
       </template>
     </q-table-->
@@ -101,7 +101,7 @@
         <form @submit.prevent="validateClinic" >
             <q-card-section class="q-px-md">
                <div class="row q-mt-md">
-                <input-text-field
+                <inputTextField
                     ref="nome"
                     rounded
                     v-model="newClinic.name"
@@ -111,7 +111,7 @@
                     label="Nome" />
             </div>
               <div class="row q-mt-md">
-                <input-text-field
+                <inputTextField
                     ref="code"
                     rounded
                     v-model="newClinic.code"
@@ -121,7 +121,7 @@
                     label="Codigo" />
             </div>
              <div class="row q-mb-md">
-                <combo-field
+                <comboField
                     class="col"
                     v-model="newClinic.type"
                     :options="clinicTypes"
@@ -133,7 +133,7 @@
                     label="Tipo de Unidade Sanitaria" />
             </div>
              <div class="row q-mb-md">
-                <combo-field
+                <comboFields
                     class="col"
                     v-model="newClinic.province"
                     :options="provinces"
@@ -147,7 +147,7 @@
                     label="Província" />
             </div>
             <div class="row q-mb-md">
-                <combo-field
+                <comboField
                     class="col"
                      transition-show="flip-up"
                     transition-hide="flip-down"
@@ -165,10 +165,10 @@
                     <q-btn push  dense color="white" text-color="black" round icon="my_location" @click="locateMe"/>
                 </div>
                 <div class="col-4 q-pl-md">
-                    <input-text-field v-model="newClinic.latitude" lazy-rules label="Latitude" ref="latitude" :rules="[ val => ( new String(val).length ) > 0 || 'O valor indicado é inválido ']" />
+                    <inputTextField v-model="newClinic.latitude" lazy-rules label="Latitude" ref="latitude" :rules="[ val => ( new String(val).length ) > 0 || 'O valor indicado é inválido ']" />
                 </div>
                 <div class="col-4 q-pl-md">
-                    <input-text-field v-model="newClinic.longitude" lazy-rules label="Longitude" ref="longitude" :rules="[ val => new String(val).length > 0 || 'O valor indicado é inválido']" />
+                    <inputTextField v-model="newClinic.longitude" lazy-rules label="Longitude" ref="longitude" :rules="[ val => new String(val).length > 0 || 'O valor indicado é inválido']" />
                 </div>
             </div>
             </q-card-section>
@@ -180,33 +180,40 @@
    </q-dialog>
 </template>
 
-<script>
-import Clinic from '../../store/models/clinic/Clinic'
-import Province from 'src/store/models/province/Province'
-import District from 'src/store/models/district/District'
-import { ref } from 'vue'
+<script setup>
+import Clinic from '../../stores/models/clinic/Clinic'
+import Province from 'src/stores/models/province/Province'
+import District from 'src/stores/models/district/District'
+import { onBeforeMount, onMounted, computed,ref } from 'vue'
 import { useQuasar, QSpinnerIos } from 'quasar'
+import { useLoading } from 'src/composables/shared/loading/loading';
+// components
+import inputTextField from 'components/Shared/InputFieldText.vue'
+import comboField from 'components/Shared/ComboField.vue'
+import clinicService from 'src/services/api/clinic/clinicService'
+import provinceService from 'src/services/api/province/provinceService'
+import districtService from 'src/services/api/district/districtService'
 
-export default {
-      props: ['clinic', 'backToDashBoard'],
-    data () {
+
+
+const { closeLoading, showloading } = useLoading();
+    const  props = defineProps( ['clinic', 'backToDashBoard'])
+
     const filter = ref('')
      const $q = useQuasar()
-    return {
-            filter,
-            $q,
-            show_dialog: false,
-            show_filter: false,
-            showAddButton: false,
-            submitting: false,
-            editedIndex: -1,
-            databaseCodes: [],
-            listErrors: [],
-            currClinic: {},
-            district: null,
-            province: null,
-            initialDistrict: 0,
-            newClinic: {
+
+
+          const  show_dialog = ref(false)
+            const showAddButton =ref(false)
+            const submitting = ref(false)
+            let editedIndex = -1
+            const databaseCodes = ref([])
+            const listErrors= ref([])
+            const currClinic =ref({})
+            const district = ref(null)
+            let province=  ref(null)
+            let initialDistrict =  0
+            let newClinic = {
                 name: '',
                 type: '',
                 code: '',
@@ -214,74 +221,76 @@ export default {
                 longitude: '',
                 province: null,
                 district: null
-            },
-            columns: [
+            }
+
+           let columns =[
                 { name: 'name', align: 'left', label: 'Nome', field: row => row.name, format: val => `${val}`, sortable: true },
                 { name: 'type', align: 'left', label: 'Tipo', field: row => row.type, format: val => `${val}`, sortable: true },
                 { name: 'district', align: 'left', label: 'Distrito', field: row => row.district, format: val => `${val}`, sortable: true },
                 { name: 'actions', label: 'Opções', field: 'actions' }
-            ],
-            clinico: '',
-            clinicTypes: [
+            ]
+
+            const clinicTypes = [
               '', 'Unidade fixa', 'Unidade temporária', 'Clínica móvel'
             ]
-        }
-    },
-    created () {
-        this.currClinic = Object.assign({}, this.newClinic)
-           this.showLoading()
-    },
-      mounted () {
+
+
+    onBeforeMount( () => {
+        currClinic.value = Object.assign({}, newClinic)
+       // showloading()
+    })
+
+      onMounted( () => {
         const offset = 0
         if (localStorage.getItem('role') === 'ROLE_USER') {
-          this.getClinicById()
+         // getClinicById()
         } else if (localStorage.getItem('role') === 'ROLE_ADMIN') {
-        //  this.getAllClinic(offset)
+        //  getAllClinic(offset)
         } else {
-          this.getAllClinicsByDistrictId(localStorage.getItem('idLogin'))
+          getAllClinicsByDistrictId(localStorage.getItem('idLogin'))
         }
-        this.getAllProvinces(offset)
-        this.extractDatabaseCodes()
-        this.verifyRole()
-       // console.log(11 + this.provinces)
-    },
-    computed: {
-     /*    clinicos () {
-          return Clinic.query().with('province').with('district')
-                   .with('district.province').where('district_id', parseInt(localStorage.getItem('idLogin'))).get()
-                     return Clinic.query().with('province').with('district')
-                   .with('district.province').get()
-        }, */
-         clinicos () {
-           if (this.district != null) {
-          return this.getClinicsByDistrictId()
+        getAllProvinces(offset)
+        extractDatabaseCodes()
+        verifyRole()
+       // console.log(11 + provinces)
+
+       closeLoading()
+    });
+
+
+        const  clinicos =computed (() => {
+           if (district.value != null) {
+          return getClinicsByDistrictId()
            } else if (localStorage.getItem('role') === 'ROLE_USER') {
-       return Clinic.query().with('province').with('district')
-                   .with('district.province').where('id', parseInt(localStorage.getItem('id_clinicUser'))).get()
+            return  clinicService.getClinicSByUser(parseInt(localStorage.getItem('id_clinicUser')))
            } else {
              return []
            }
-        },
-          provinces () {
-            return Province.query().orderBy('code').has('code').get()
-        },
-        districts () {
-        if (this.newClinic.province !== null) {
-            return District.query().withAll().where('province_id', this.newClinic.province.id).get()
+        });
+
+         const  provinces =computed(() =>{
+            return provinceService.getAllProvinces()
+        });
+
+        const districts = computed(() => {
+        if (newClinic.province !== null) {
+            return districtService.getAllByProvinceId(newClinic.province.id).get()
         } else {
             return null
         }
-        },
-          districtsCombo () {
-        if (this.province !== null) {
-            return District.query().withAll().where('province_id', this.province.id).get()
+        })
+
+        const  districtsCombo =computed (() =>  {
+        if (province.value !== null) {
+          return districtService.getAllByProvinceId(newClinic.province.id).get()
         } else {
             return null
         }
-        }
-    },
-    methods: {
-    async getLocation () {
+        });
+
+
+
+   const  getLocation = () => {
           return new Promise((resolve, reject) => {
             if (!('geolocation' in navigator)) {
               reject(new Error('Localização Geográfica não está disponível.'))
@@ -292,217 +301,201 @@ export default {
           reject(err)
         })
       })
-    },
-    async locateMe () {
-        this.$q.loading.show({
+    }
+
+    const  locateMe = async () => {
+        $q.loading.show({
           spinner: QSpinnerIos,
           message: 'Carregando a sua localização. Por favor, aguarde...'
         })
-      this.gettingLocation = true
+      gettingLocation = true
       try {
-        this.gettingLocation = false
-        this.location = await this.getLocation()
-        this.newClinic.latitude = this.location.coords.latitude
-        this.newClinic.longitude = this.location.coords.longitude
-        this.$q.loading.hide()
+        gettingLocation = false
+        location = await getLocation()
+        newClinic.latitude = location.coords.latitude
+        newClinic.longitude = location.coords.longitude
+        $q.loading.hide()
       } catch (e) {
-        this.gettingLocation = false
-         this.errorStr = e.message
-          this.$q.loading.hide()
-          this.$q.dialog({
+        gettingLocation = false
+         errorStr = e.message
+          $q.loading.hide()
+          $q.dialog({
           title: 'Problema no carregamento da localização',
           message: 'Não tem permissões para aceder a localização do dispositivo ou a função de localização encontra-se desligada.\n Por favor ligue a localização ou dê as permissões de localização'
         }).onOk(() => {
-            this.newClinic.latitude = -25.9678239
-          this.newClinic.longitude = 32.5864914
-          this.$q.loading.hide()
+            newClinic.latitude = -25.9678239
+          newClinic.longitude = 32.5864914
+          $q.loading.hide()
         })
       }
-    },
-    validateClinic () {
-            this.$refs.nome.$refs.ref.validate()
-             this.$refs.code.$refs.ref.validate()
-            this.$refs.latitude.$refs.ref.validate()
-            this.$refs.longitude.$refs.ref.validate()
-            console.log(this.$refs.latitude.$refs.ref.validate())
-            if (this.$refs.nome.$refs.ref.validate() && this.$refs.latitude.$refs.ref.validate() && this.$refs.longitude.$refs.ref.validate() && this.$refs.code.$refs.ref.validate()) {
-                this.submitting = true
-                this.submitClinic()
+    }
+
+    const validateClinic = () => {
+            $refs.nome.$refs.ref.validate()
+             $refs.code.$refs.ref.validate()
+            $refs.latitude.$refs.ref.validate()
+            $refs.longitude.$refs.ref.validate()
+            console.log($refs.latitude.$refs.ref.validate())
+            if ($refs.nome.$refs.ref.validate() && $refs.latitude.$refs.ref.validate() && $refs.longitude.$refs.ref.validate() && $refs.code.$refs.ref.validate()) {
+                submitting.value = true
+                submitClinic()
             }
-        },
-           getClinicsByDistrictId () {
-            if (this.district != null && this.initialDistrict !== this.district.id) {
-               this.$q.loading.show({
+        }
+
+        const    getClinicsByDistrictId  =()=>  {
+            if (district.value != null && initialDistrict !== district.value.id) {
+               $q.loading.show({
           spinner: QSpinnerIos,
           message: 'Carregando Unidades Sanitarias. Por favor, aguarde...'
         })
-              this.initialDistrict = this.district.id
-              this.getAllClinicsByDistrictId(this.district.id).then(resp => {
-                  this.$q.loading.hide()
+              initialDistrict = district.value.id
+              getAllClinicsByDistrictId(district.value.id).then(resp => {
+                  $q.loading.hide()
+                  console.log(resp)
               })
             }
               return Clinic.query().with('province').with('district')
-                   .with('district.province').where('district_id', parseInt(this.district.id)).get()
-        },
-        async submitClinic () {
-            console.log(this.newClinic)
-          if (this.editedIndex !== 0) {
-            await Clinic.api().post('/clinic', this.newClinic).then(resp => {
+                   .with('district.province').where('district_id', parseInt(district.value.id)).get()
+        }
+
+        const  submitClinic = async () => {
+            console.log(newClinic)
+          if (editedIndex !== 0) {
+            await Clinic.api().post('/clinic', newClinic).then(resp => {
                 console.log(resp.response.data)
-                this.show_dialog = false
-                this.submitting = false
-                this.$emit('update:backToDashBoard', true)
-              this.$q.notify({
+                show_dialog.value = false
+                submitting.value = false
+                $emit('update:backToDashBoard', true)
+              $q.notify({
               message: 'Clínica registrada com sucesso.',
               color: 'teal'
           })
             }).catch(error => {
-            this.submitting = false
+            submitting.value = false
             console.log(error)
             if (error.request.status !== 0) {
             const arrayErrors = JSON.parse(error.request.response)
             if (arrayErrors.total == null) {
-              this.listErrors.push(arrayErrors.message)
+              listErrors.value.push(arrayErrors.message)
             } else {
               arrayErrors._embedded.errors.forEach(element => {
-                this.listErrors.push(element.message)
+                listErrors.value.push(element.message)
               })
             }
-              this.$emit('update:backToDashBoard', true)
-              this.$q.notify({
-              message: 'Error: ' + this.listErrors,
+              $emit('update:backToDashBoard', true)
+              $q.notify({
+              message: 'Error: ' + listErrors.value,
               color: 'red'
               })
-            console.log(this.listErrors)
+            console.log(listErrors.value)
           }
             })
           } else {
-            await Clinic.api().patch('/clinic/' + this.newClinic.id, this.newClinic).then(resp => {
+            await Clinic.api().patch('/clinic/' + newClinic.id, newClinic).then(resp => {
               console.log(resp.response.data)
-              this.show_dialog = false
-              this.submitting = false
-              this.$emit('update:backToDashBoard', true)
-              this.$q.notify({
+              show_dialog.value = false
+              submitting.value = false
+              $emit('update:backToDashBoard', true)
+              $q.notify({
               message: 'Clínica actualizada com sucesso.',
               color: 'teal'
           })
             }).catch(error => {
-            this.submitting = false
+            submitting.value = false
             console.log(error)
             if (error.request.status !== 0) {
             const arrayErrors = JSON.parse(error.request.response)
             if (arrayErrors.total == null) {
-              this.listErrors.push(arrayErrors.message)
+              listErrors.value.push(arrayErrors.message)
             } else {
               arrayErrors._embedded.errors.forEach(element => {
-                this.listErrors.push(element.message)
+                listErrors.value.push(element.message)
               })
             }
-              this.$emit('update:backToDashBoard', true)
-              this.$q.notify({
-              message: 'Error: ' + this.listErrors,
+              $emit('update:backToDashBoard', true)
+              $q.notify({
+              message: 'Error: ' + listErrors.value,
               color: 'red'
               })
-            console.log(this.listErrors)
+            console.log(listErrors.value)
           }
             })
-            this.editedIndex = -1
-            this.listErrors = []
+            editedIndex = -1
+            listErrors.value = []
           }
-        },
-       async getAllClinicsByDistrictId (districtId) {
+        }
+
+       const  getAllClinicsByDistrictId = async (districtId) => {
            await Clinic.api().get('/clinic/district/' + districtId).then(resp => {
               console.log(resp.response.data)
             }).catch(error => {
                 console.log(error)
             })
-    },
-     getAllClinic (offset) {
-       if (this.clinicos.length === 0) {
-            if (offset >= 0) {
-                Clinic.api().get('/clinic?offset=' + offset + '&max=100').then(resp => {
-                this.submitting = false
-                offset = offset + 100
-                if (resp.response.data.length > 0) {
-                    setTimeout(this.getAllClinic(offset), 2)
-                }
-                }).catch(error => {
-                console.log('Erro no code ' + error)
-                })
-            }
-       }
-        },
-      addClinic () {
+    }
+
+      const addClinic = () => {
            if (localStorage.getItem('role') === 'ROLE_USER_DISTRICT') {
-       // this.showLoading()
-      this.newClinic.district = District.query().with('province').find(localStorage.getItem('idLogin'))
-       this.newClinic.province = this.newClinic.district.province
+       // showLoading()
+      newClinic.district = districtService.getDistrictByIdLogin(localStorage.getItem('idLogin'))
+       newClinic.province = newClinic.district.province
      }
-         this.show_dialog = true
-         //  this.editMode = false
-      },
-    async getClinicById () {
+         show_dialog.value = true
+         //  editMode = false
+      }
+
+   /* const   getClinicById = async () =>  {
        await Clinic.api().get('/clinic/' + localStorage.getItem('id_clinicUser')).then(resp => {
           console.log(resp.response.data)
         }).catch(error => {
             console.log(error)
         })
-     },
-    async getAllProvinces (offset) {
-        if (offset >= 0) {
+     } */
+
+    const  getAllProvinces = async (offset) => {
+      provinceService.getMobile(0)
+     /*   if (offset >= 0) {
             await Province.api().get('/province?offset=' + offset + '&max=100').then(resp => {
+              console.log(resp.response.data)
               offset = offset + 100
-              // if (resp.response.data.length > 0) { setTimeout(this.getAllProvinces(offset), 2) }
+              // if (resp.response.data.length > 0) { setTimeout(getAllProvinces(offset), 2) }
             }).catch(error => {
                 console.log(error)
             })
-        }
-    },
-    verifyRole () {
-      if (localStorage.getItem('role') === 'ROLE_USER_DISTRICT' || localStorage.getItem('role') === 'ROLE_ADMIN') {
-        this.showAddButton = true
-      }
-     },
-    editClinic (clinic) {
-      this.editedIndex = 0
-      this.newClinic = Object.assign({}, clinic)
-      this.newClinic.province = Province.query().withAll().find(clinic.district.province_id)
-      this.newClinic.district = District.query().withAll().find(clinic.district_id)
-      this.show_dialog = true
-    },
-    validateThis (code) {
-      this.clinicos.forEach(element => {
-            return element.code === code
-             })
-    },
-    extractDatabaseCodes () {
-        this.clinicos.forEach(element => {
-            this.databaseCodes.push(element.code)
-    })
-    },
-    navRedirect (e, go) {
-      e.preventDefault() // we cancel the default navigation
-      go({ query: { tab: '2', noScroll: true } })
-    },
-     showLoading () {
-        this.$q.loading.show({
-          spinner: QSpinnerIos,
-          message: 'Por favor, aguarde...'
-     })
-        // hiding in 2s
-        this.timer = setTimeout(() => {
-         this.$q.loading.hide()
-          this.timer = void 0
-        }, 2000)
-      }
-    },
-    components: {
-        'input-text-field': require('components/Shared/InputFieldText.vue').default,
-          'combo-field': require('components/Shared/ComboField.vue').default
-      //  'input-number-phone-field': require('components/Shared/InputFieldPhoneNumber.vue').default
+        }*/
     }
 
-}
+    const verifyRole = () =>  {
+      if (localStorage.getItem('role') === 'ROLE_USER_DISTRICT' || localStorage.getItem('role') === 'ROLE_ADMIN') {
+        showAddButton.value = true
+      }
+      closeLoading()
+     }
+
+    const editClinic = (clinic) => {
+      editedIndex = 0
+      newClinic = Object.assign({}, clinic)
+      newClinic.province = Province.query().withAll().find(props.clinic.district.province_id)
+      newClinic.district = District.query().withAll().find(props.clinic.district_id)
+      show_dialog.value = true
+    }
+
+
+
+    const extractDatabaseCodes = () =>  {
+        clinicos.value.forEach(element => {
+            databaseCodes.value.push(element.code)
+    })
+    }
+
+    const navRedirect = (e, go) => {
+      e.preventDefault() // we cancel the default navigation
+      go({ query: { tab: '2', noScroll: true } })
+    }
+
+
+
+
+
 </script>
 
 <style>
